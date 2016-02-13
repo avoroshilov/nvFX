@@ -280,6 +280,35 @@ bool        ResourceD3D::validationNeeded()
  ** FrameBufferObject FrameBufferObject FrameBufferObject FrameBufferObject
  **
  *************************************************************************/ 
+FrameBufferObject::~FrameBufferObject()
+{
+	int i=0;
+	ResourceD3D *pResource;
+
+	for(; i<(int)m_colors.size(); i++)
+	{
+		if(m_colors[i]->m_creationData.resolveTarget) // case where we shortcut the rb to the texutre directly
+		{
+			pResource = static_cast<ResourceD3D*>(m_colors[i]->m_creationData.resolveTarget);
+			LOGD("Deleting FBO %s to FBO %s at Color %d (via %s)\n", m_colors[i]->m_creationData.resolveTarget->getName(), m_name.c_str(), i, m_colors[i]->getName());
+		} else {
+			pResource = pResource = static_cast<ResourceD3D*>(m_colors[i]);
+		}
+		if(pResource->m_pTextureRTView)
+			pResource->m_pTextureRTView->Release();
+	}
+
+	// No reference counter to decrement... not used here
+	m_dst = NULL;
+	for(; i<(int)m_colors.size(); i++)
+	{
+		m_colors[i] = NULL;
+	}
+	// TODO avoroshilov: check if there is anything else to release
+	//if(m_fboID)
+	//	glDeleteFramebuffers(1, &m_fboID);
+	//m_fboID = 0;
+}
 
 bool FrameBufferObject::validate()
 {

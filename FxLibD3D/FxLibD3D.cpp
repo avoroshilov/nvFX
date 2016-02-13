@@ -116,7 +116,7 @@ StateGroupPath *new_StateGroupPR(Container *pCont, const char* name)
 void delete_StateGroupPR(StateGroupPath *p)
 {
 }
-Shader* new_ShaderPath(const char* name, Container *pCont, bool bPostscript)
+Shader* new_ShaderPath(const char* name, bool bPostscript)
 {
     return NULL;
 }
