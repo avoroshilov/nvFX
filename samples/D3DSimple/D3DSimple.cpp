@@ -51,6 +51,14 @@ ID3D11SamplerState *		g_samplerLinear = nullptr;
 ID3D11VertexShader *		g_vertexShader = nullptr;
 ID3D11PixelShader *			g_pixelShader = nullptr;
 
+void render()
+{
+	const FLOAT blue[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	g_immediateContext->ClearRenderTargetView(g_renderTargetView, blue);
+//	g_immediateContext->Draw(3, 0);
+	g_swapChain->Present(0, 0);
+}
+
 bool initBase()
 {
 	return true;
@@ -465,10 +473,11 @@ int WINAPI WinMain(    HINSTANCE hInstance,
 			else 
 			{
 				//idle();
+
 				if(g_renderCnt > 0)
 				{
 					g_renderCnt--;
-					//display();
+					render();
 				} else
 					Sleep(10);
 			}
