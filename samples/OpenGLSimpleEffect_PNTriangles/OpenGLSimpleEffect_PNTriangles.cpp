@@ -716,7 +716,7 @@ bool loadMaterialEffect()
     fx_Effect = nvFX::IContainer::create(EFFECT);
     bool bRes = nvFX::loadEffectFromFile(fx_Effect, EFFECT);
     if(!bRes)
-        bRes = nvFX::loadEffectFromFile(fx_Effect, SOURCE_DIR "/"EFFECT);
+        bRes = nvFX::loadEffectFromFile(fx_Effect, SOURCE_DIR "/" EFFECT);
     if(!bRes)
     {
         LOGE("Failed\n");

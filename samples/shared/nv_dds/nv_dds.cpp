@@ -184,6 +184,8 @@
 //#include <GL/glext.h>
 #endif
 
+#include <algorithm>
+
 #include <stdio.h>
 #include <assert.h>
 #include "nv_dds.h"
