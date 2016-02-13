@@ -4,9 +4,10 @@ SET(SHADER_DIR_LOCAL "${D3DSimple_SOURCE_DIR}/shared")
 
 set(PLATFORM_LIBRARIES
     ${NVFX_LIBS}
-    ${OPENGL_LIBRARY}
     ${NSIGHT_LIB}
     ${CUDA_LIB}
+	${DXSDK_d3d11_LIBRARY}
+	${DXSDK_d3dcompiler_LIBRARY}
 )
 include_directories(
     ${nvFx_SOURCE_DIR}/include

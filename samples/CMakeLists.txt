@@ -106,7 +106,6 @@ if( OPENGL_FOUND AND GLEW_FOUND OR (APPLE AND GLUT_FOUND))
     add_subdirectory(OpenGL_GLSLCompute)
     add_subdirectory(OpenGLLigthingEffect)
     add_subdirectory(ShaderToyViewer)
-    add_subdirectory(D3DSimple)
     # Broken...to fix and check before activating it
     #add_subdirectory(OpenGLFluitSimEffect)
     # Not ready yet
@@ -136,7 +135,7 @@ else()
     )
 endif()
 
-#if(DXSDK_FOUND)
-#   add_subdirectory(dxSimple)
-#endif()
+if(DXSDK_FOUND)
+    add_subdirectory(D3DSimple)
+endif()
 

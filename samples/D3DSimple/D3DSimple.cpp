@@ -20,6 +20,8 @@
 #endif
 
 #include <windows.h>
+#include <d3d11.h>
+#include <d3d11_1.h>
 
 HDC         g_hDC       = NULL;
 HGLRC       g_hRC       = NULL;
@@ -31,18 +33,313 @@ bool        g_bCtrl     = false;
 bool        g_bShift    = false;
 int         g_renderCnt = 0;
 
+int g_width = 800;
+int g_height = 600;
+
+// D3D Objects
+ID3D11Device *				g_d3dDevice = nullptr;
+ID3D11Device1 *				g_d3dDevice1 = nullptr;
+ID3D11DeviceContext *		g_immediateContext = nullptr;
+ID3D11DeviceContext1 *		g_immediateContext1 = nullptr;
+IDXGISwapChain *			g_swapChain = nullptr;
+IDXGISwapChain1 *			g_swapChain1 = nullptr;
+ID3D11RenderTargetView *	g_renderTargetView = nullptr;
+ID3D11Texture2D *			g_texture = nullptr;
+ID3D11Texture2D *			g_stagingTexture = nullptr;
+ID3D11ShaderResourceView *	g_textureRV = nullptr;
+ID3D11SamplerState *		g_samplerLinear = nullptr;
+ID3D11VertexShader *		g_vertexShader = nullptr;
+ID3D11PixelShader *			g_pixelShader = nullptr;
+
 bool initBase()
 {
 	return true;
 }
 
-void initD3D()
+bool initD3D()
 {
+	HRESULT hr = S_OK;
+
+	UINT createDeviceFlags = 0;
+#ifdef _DEBUG
+	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+	D3D_DRIVER_TYPE driverTypes[] =
+	{
+		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE_REFERENCE,
+	};
+
+	UINT numDriverTypes = ARRAYSIZE(driverTypes);
+
+	D3D_FEATURE_LEVEL featureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0,
+	};
+
+	UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+
+	D3D_DRIVER_TYPE driverType = D3D_DRIVER_TYPE_NULL;
+	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
+
+	for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
+	{
+		driverType = driverTypes[driverTypeIndex];
+		hr = D3D11CreateDevice(nullptr, driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
+			D3D11_SDK_VERSION, &g_d3dDevice, &featureLevel, &g_immediateContext);
+
+		if (hr == E_INVALIDARG)
+		{
+			// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
+			hr = D3D11CreateDevice(nullptr, driverType, nullptr, createDeviceFlags, &featureLevels[1], numFeatureLevels - 1,
+				D3D11_SDK_VERSION, &g_d3dDevice, &featureLevel, &g_immediateContext);
+		}
+
+		if (SUCCEEDED(hr))
+			break;
+	}
+
+	if (FAILED(hr))
+		return false;
+
+	// Obtain DXGI factory from device (since we used nullptr for pAdapter above)
+	IDXGIFactory1* dxgiFactory = nullptr;
+	{
+		IDXGIDevice* dxgiDevice = nullptr;
+		hr = g_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+
+		if (SUCCEEDED(hr))
+		{
+			IDXGIAdapter* adapter = nullptr;
+			hr = dxgiDevice->GetAdapter(&adapter);
+
+			if (SUCCEEDED(hr))
+			{
+				hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
+				adapter->Release();
+			}
+
+			dxgiDevice->Release();
+		}
+	}
+
+	if (FAILED(hr))
+		return false;
+
+	// Create swap chain
+	IDXGIFactory2* dxgiFactory2 = nullptr;
+	hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&dxgiFactory2));
+
+	if (dxgiFactory2)
+	{
+		// DirectX 11.1 or later
+		hr = g_d3dDevice->QueryInterface(__uuidof(ID3D11Device1), reinterpret_cast<void**>(&g_d3dDevice1));
+		if (SUCCEEDED(hr))
+		{
+			(void)g_immediateContext->QueryInterface(__uuidof(ID3D11DeviceContext1), reinterpret_cast<void**>(&g_immediateContext1));
+		}
+
+		DXGI_SWAP_CHAIN_DESC1 sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.Width = g_width;
+		sd.Height = g_height;
+		sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.SampleDesc.Count = 1;
+		sd.SampleDesc.Quality = 0;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.BufferCount = 1;
+
+		hr = dxgiFactory2->CreateSwapChainForHwnd(g_d3dDevice, g_hWnd, &sd, nullptr, nullptr, &g_swapChain1);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = g_swapChain1->QueryInterface(__uuidof(IDXGISwapChain), reinterpret_cast<void**>(&g_swapChain));
+		}
+
+		dxgiFactory2->Release();
+	}
+	else
+	{
+		// DirectX 11.0 systems
+		DXGI_SWAP_CHAIN_DESC sd;
+		ZeroMemory(&sd, sizeof(sd));
+		sd.BufferCount = 1;
+		sd.BufferDesc.Width = g_width;
+		sd.BufferDesc.Height = g_height;
+		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.BufferDesc.RefreshRate.Numerator = 60;
+		sd.BufferDesc.RefreshRate.Denominator = 1;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.OutputWindow = g_hWnd;
+		sd.SampleDesc.Count = 1;
+		sd.SampleDesc.Quality = 0;
+		sd.Windowed = TRUE;
+
+		hr = dxgiFactory->CreateSwapChain(g_d3dDevice, &sd, &g_swapChain);
+	}
+
+	// Note this tutorial doesn't handle full-screen swapchains so we block the ALT+ENTER shortcut
+	dxgiFactory->MakeWindowAssociation(g_hWnd, DXGI_MWA_NO_ALT_ENTER);
+
+	dxgiFactory->Release();
+
+	if (FAILED(hr))
+		return false;
+
+	D3D11_TEXTURE2D_DESC textureDesc;
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+
+	// Initialize the render target texture description.
+	ZeroMemory(&textureDesc, sizeof(textureDesc));
+
+	// Setup the render target texture description.
+	textureDesc.Width = g_width;
+	textureDesc.Height = g_height;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+
+	// Create the render target texture.
+	hr = g_d3dDevice->CreateTexture2D(&textureDesc, NULL, &g_texture);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	textureDesc.Usage = D3D11_USAGE_STAGING;
+	textureDesc.BindFlags = 0;
+	textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	hr = g_d3dDevice->CreateTexture2D(&textureDesc, NULL, &g_stagingTexture);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// Setup the description of the shader resource view.
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+	// Create the shader resource view.
+	hr = g_d3dDevice->CreateShaderResourceView(g_texture, &shaderResourceViewDesc, &g_textureRV);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// Create a render target view
+	ID3D11Texture2D* backBuffer = nullptr;
+	hr = g_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+
+	if (FAILED(hr))
+		return false;
+
+	hr = g_d3dDevice->CreateRenderTargetView(backBuffer, nullptr, &g_renderTargetView);
+	backBuffer->Release();
+
+	if (FAILED(hr))
+		return false;
+
+	// Setup the viewport
+	D3D11_VIEWPORT vp;
+	vp.Width = (FLOAT)g_width;
+	vp.Height = (FLOAT)g_height;
+	vp.MinDepth = 0.0f;
+	vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	g_immediateContext->RSSetViewports(1, &vp);
+
+	// Create the vertex shader
+//	hr = g_d3dDevice->CreateVertexShader(drawFullScreenTriangleVS, sizeof(drawFullScreenTriangleVS), nullptr, &g_vertexShader);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// Set the input layout
+	g_immediateContext->IASetInputLayout(NULL);
+
+	// Create the pixel shader
+//	hr = g_d3dDevice->CreatePixelShader(ps_copy, sizeof(ps_copy), nullptr, &g_pixelShader);
+
+	if (FAILED(hr))
+		return false;
+
+	// Create the sample state
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	hr = g_d3dDevice->CreateSamplerState(&sampDesc, &g_samplerLinear);
+
+	if (FAILED(hr))
+		return false;
+
+	// Set primitive topology
+	g_immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// Render a triangle
+	g_immediateContext->VSSetShader(g_vertexShader, nullptr, 0);
+	g_immediateContext->PSSetShader(g_pixelShader, nullptr, 0);
+
+	g_immediateContext->PSSetShaderResources(0, 1, &g_textureRV);
+	g_immediateContext->PSSetSamplers(0, 1, &g_samplerLinear);
+	g_immediateContext->OMSetRenderTargets(1, &g_renderTargetView, nullptr);
+
+	return true;
 }
+
+#define D3D_SAFE_RELEASE(obj) \
+	if (obj) \
+	{ \
+		obj->Release(); \
+		obj = nullptr; \
+	}
 
 void destroyD3D()
 {
+	if (g_immediateContext)
+		g_immediateContext->ClearState();
+
+	D3D_SAFE_RELEASE(g_samplerLinear);
+	D3D_SAFE_RELEASE(g_vertexShader);
+	D3D_SAFE_RELEASE(g_pixelShader);
+	D3D_SAFE_RELEASE(g_textureRV);
+	D3D_SAFE_RELEASE(g_stagingTexture);
+	D3D_SAFE_RELEASE(g_texture);
+	D3D_SAFE_RELEASE(g_renderTargetView);
+	D3D_SAFE_RELEASE(g_swapChain1);
+	D3D_SAFE_RELEASE(g_swapChain);
+	D3D_SAFE_RELEASE(g_immediateContext1);
+	D3D_SAFE_RELEASE(g_immediateContext);
+	D3D_SAFE_RELEASE(g_d3dDevice1);
+	D3D_SAFE_RELEASE(g_d3dDevice);
 }
+
+#undef D3D_SAFE_RELEASE
 
 void destroyBase()
 {
@@ -137,10 +434,11 @@ int WINAPI WinMain(    HINSTANCE hInstance,
 		return E_FAIL;
 
 	const int windowSize[2] = {800, 600};
+	const int windowPos[2] = { (GetSystemMetrics(SM_CXSCREEN) - windowSize[0])/2, (GetSystemMetrics(SM_CYSCREEN) - windowSize[1])/2 };
 
 	g_hWnd = CreateWindowEx( NULL, "MY_WINDOWS_CLASS",
-		"Viewer",
-		WS_OVERLAPPEDWINDOW, 0, 0, windowSize[0], windowSize[1], NULL, NULL, 
+		"D3D Sample",
+		WS_OVERLAPPEDWINDOW, windowPos[0], windowPos[1], windowSize[0], windowSize[1], NULL, NULL, 
 		hInstance, NULL );
 
 	if( g_hWnd == NULL )
