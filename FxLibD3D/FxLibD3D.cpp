@@ -136,16 +136,16 @@ void delete_Program(IProgram *pProg)
     delete p;
 }
 
-Shader* new_GLSLShader(const char* name, Container *pCont)
+Shader* new_GLSLShader(const char* name)
 {
     return NULL;
 }
-Shader* new_HLSL10Shader(const char* name, Container *pCont)
+Shader* new_HLSL10Shader(const char* name)
 {
 	// TODO avoroshilov: trace where new_HLSL10Shader is called, and deal with containers there
     return new D3DShader(name/*, pCont*/);
 }
-Shader* new_HLSL11Shader(const char* name, Container *pCont)
+Shader* new_HLSL11Shader(const char* name)
 {
 	// TODO avoroshilov: trace where new_HLSL11Shader is called, and deal with containers there
 	return new D3DShader(name/*, pCont*/);
