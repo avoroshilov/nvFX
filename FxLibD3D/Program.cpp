@@ -205,8 +205,9 @@ assert(1);
         return false;
     }
     // add in the shader the target reference of this program
-    static_cast<Shader*>(pShader)->addTarget(this);
-    return true;
+    //static_cast<Shader*>(pShader)->addTarget(this);
+	static_cast<Shader*>(pShader)->addUser(this);
+	return true;
 }
 /*************************************************************************/ /**
  ** 
@@ -238,12 +239,13 @@ void D3DShaderProgram::cleanup()
         (*icshd)->cleanupShader();
         ++icshd;
     }*/
-    iShd = m_data.shaders.begin();
-    iEnd = m_data.shaders.end();
+    ShaderMap::iterator iShd = m_data.shaders.begin();
+	ShaderMap::iterator iEnd = m_data.shaders.end();
     for(;iShd != iEnd; iShd++)
     {
-        iShd.second->removeTarget(this);
-    }
+        //iShd.second->removeTarget(this);
+		iShd->second->removeUser(this);
+	}
 #define CLEANUPSHD(shd)\
     if(shd.shader)         shd.shader->Release();\
     if(shd.compiledShader) shd.compiledShader->Release();\
@@ -253,6 +255,7 @@ void D3DShaderProgram::cleanup()
     shd.code.clear();\
     shd.reflector = NULL;
 
+	// TODO avoroshilov: see if more than one shader/reflector/etc should be released here
     CLEANUPSHD(m_data);
 }
 /*************************************************************************/ /**

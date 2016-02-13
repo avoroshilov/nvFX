@@ -142,11 +142,13 @@ Shader* new_GLSLShader(const char* name, Container *pCont)
 }
 Shader* new_HLSL10Shader(const char* name, Container *pCont)
 {
-    return new D3DShader(name, pCont);
+	// TODO avoroshilov: trace where new_HLSL10Shader is called, and deal with containers there
+    return new D3DShader(name/*, pCont*/);
 }
 Shader* new_HLSL11Shader(const char* name, Container *pCont)
 {
-    return new D3DShader(name, pCont);
+	// TODO avoroshilov: trace where new_HLSL11Shader is called, and deal with containers there
+	return new D3DShader(name/*, pCont*/);
 }
 void     delete_Shader(IShader *pShd)
 {

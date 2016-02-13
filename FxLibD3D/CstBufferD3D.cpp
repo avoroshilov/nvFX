@@ -123,18 +123,18 @@ void CstBufferD3D::updateD3D(STarget &t)
     }
 }
 
-CstBuffer*    CstBufferD3D::update2(Pass *pass, bool bBindProgram, bool bCreateIfNeeded, bool bCreateBufferIfNeeded)
+CstBuffer*    CstBufferD3D::update2(Pass *pass, bool bCreateIfNeeded, bool bCreateBufferIfNeeded)
 {
     int id;
     for(int i=0; (id=pass->getLayerId(i)) >= 0; i++)
-        update(pass, id, bBindProgram, bCreateIfNeeded, bCreateBufferIfNeeded);
+        update(pass, id, bCreateIfNeeded, bCreateBufferIfNeeded);
     return this;
 }
 
-CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bBindProgram, bool bCreateIfNeeded, bool bCreateBufferIfNeeded)
+CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bCreateIfNeeded, bool bCreateBufferIfNeeded)
 {
     if(layerID < 0)
-        return update2(pass, bBindProgram, bCreateIfNeeded, bCreateBufferIfNeeded);
+        return update2(pass, bCreateIfNeeded, bCreateBufferIfNeeded);
     for(int i=0; i<(int)m_targets.size(); i++)
     {
         STarget &t = m_targets[i];
@@ -220,6 +220,7 @@ CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bBindProgram, b
 
 CstBuffer* CstBufferD3D::updateForTarget(STarget &t, bool bBindProgram)
 {
+	// TODO avoroshilov: this function is obsolete
     if(!t.valid)
         return this;
     switch(t.ttype)
@@ -238,6 +239,32 @@ CstBuffer* CstBufferD3D::updateForTarget(STarget &t, bool bBindProgram)
         break;
     }
     return this;
+}
+
+CstBuffer*    CstBufferD3D::updateForTarget(int target)
+{
+	CstBuffer::STarget &t = m_targets[target];
+	m_activeTarget = target;
+	//assert(t.valid);
+	CHECK_TRUE(t.valid);
+	//if(!t.valid)
+	//    return this;
+	switch(t.ttype)
+	{
+	case THLSL_VTX:
+	case THLSL_PIX:
+	case THLSL_GS:
+	case THLSL_HS:
+	case THLSL_DS:
+		// At execution time, if a Cst Buffer is missing, we take the liberty to create one for you
+		if(m_pBufferInterface == NULL)
+			buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
+		updateD3D(t);
+		break;
+	case TDXCOMPUTE:
+		break;
+	}
+	return this;
 }
 
 /*************************************************************************/ /**

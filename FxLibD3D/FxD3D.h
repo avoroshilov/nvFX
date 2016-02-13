@@ -40,6 +40,7 @@
 
 #include "FxLib.h"
 #ifdef USE_D3D11
+#include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11Shader.h>
 #include <d3dx11.h>
@@ -89,6 +90,7 @@ typedef D3D11_TEXTURE_ADDRESS_MODE              D3D1X_TEXTURE_ADDRESS_MODE;
 
 #else
 
+#include <dxgi.h>
 #include <d3d10.h>
 #include <d3dx10.h>
 typedef ID3D10Texture1D         ID3D1XTexture1D;
@@ -166,10 +168,11 @@ public:
 
     // TODO: change this approach : update() should be done in CstBuffer
     // target creation should be done outside of update
-    virtual CstBuffer*  update(Pass *pass, int layerID, bool bBindProgram, bool bCreateIfNeeded, bool bCreateBufferIfNeeded);
-    virtual CstBuffer*  update2(Pass *pass, bool bBindProgram, bool bCreateIfNeeded, bool bCreateBufferIfNeeded);
+    virtual CstBuffer*  update(Pass *pass, int layerID, bool bCreateIfNeeded, bool bCreateBufferIfNeeded);
+    virtual CstBuffer*  update2(Pass *pass, bool bCreateIfNeeded, bool bCreateBufferIfNeeded);
     virtual CstBuffer*  updateForTarget(STarget &t, bool bBindProgram = false);
-    virtual int         bufferSizeAndData(char *pData, int *sz=NULL);
+	virtual CstBuffer*  updateForTarget(int target);
+	virtual int         bufferSizeAndData(char *pData, int *sz=NULL);
     virtual void*       buildD3DBuffer(ICstBuffer::BufferUsageD3D usage);
     virtual ICstBuffer* setD3DBuffer(void* buffer);
     virtual bool        updateFromUniforms(bool bForceUpdating=false);
@@ -186,10 +189,10 @@ public:
     UniformD3D(const char* name = NULL, const char* groupname = NULL, const char* semantic = NULL);
     // TODO: change this approach : update() should be done in CstBuffer
     // target creation should be done outside of update
-    virtual Uniform*    update(ShadowedData* pData, Pass *pass, int ppID, bool bBindProgram, bool bCreateIfNeeded);
-    virtual Uniform*    update2(ShadowedData* pData, Pass *pass, bool bBindProgram, bool bCreateIfNeeded);
-    void                updateD3D(ShadowedData* pData, STarget &t, bool bBindProgram);
-    virtual Uniform*    updateForTarget(ShadowedData* pData, STarget &t, bool bBindProgram = false);
+    virtual Uniform*    update(ShadowedData* pData, Pass *pass, int ppID, bool bCreateIfNeeded);
+    virtual Uniform*    update2(ShadowedData* pData, Pass *pass, bool bCreateIfNeeded);
+    void                updateD3D(ShadowedData* pData, STarget &t);
+    virtual Uniform*    updateForTarget(ShadowedData* pData, int target);
 };
 
 /*************************************************************************/ /**
@@ -253,13 +256,13 @@ public:
 class D3DShader : public Shader
 {
 public:
-    D3DShader(const char *name = NULL, IContainer* pCont = NULL);
+    D3DShader(const char *name = NULL);
     ~D3DShader();
 
     void    cleanupShader();
     /// \arg \b type can be 0 to 4 (FX_VTXPROG FX_GEOMPROG FX_FRAGPROG FX_TCSPROG FX_TESPROG)
     bool    isCompiled(int type);
-    bool    compileShader(GLenum type=0);
+    bool    compileShader(ShaderType type, IContainer *pContainer);
 
     GLhandleARB getGLSLShaderObj(GLenum type);
 
@@ -360,11 +363,11 @@ public:
     /// \brief updates sampler-state. Same idea than uniform set/update mechanism. But this one is OpenGL focused
     virtual void    update(GLenum target, GLint tex, bool bindTexture=false);
     /// \brief update targets with the shadowed values. Same mechanism as for uniform (set() vs. update())
-    virtual SamplerState*  update(void *data, Pass *pass, int layerID, bool bBindProgram, bool bCreateIfNeeded);
+    virtual SamplerState*  update(void *data, Pass *pass, int layerID, bool bCreateIfNeeded);
     /// \brief update2 is called when layerID == -1
-    virtual SamplerState*  update2(void *data, Pass *pass, bool bBindProgram, bool bCreateIfNeeded);
+    virtual SamplerState*  update2(void *data, Pass *pass, bool bCreateIfNeeded);
     /// \brief update only for a specific target
-    virtual SamplerState*  updateForTarget(void *data, STarget &t, bool bBindProgram = false);
+    virtual SamplerState*  updateForTarget(void *data, int target);
     /// \validates the texture object. Essentially needed to setup something on Gfx API side (D3D, for example... not OpenGL)
     bool            validate();
     // TODO ? Add setXXX() ?
