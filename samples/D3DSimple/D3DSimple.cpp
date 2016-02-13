@@ -19,9 +19,13 @@
     #define new DEBUG_NEW
 #endif
 
+#include <stdio.h>
+
 #include <windows.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+
+#include "FxParser.h"
 
 HDC         g_hDC       = NULL;
 HGLRC       g_hRC       = NULL;
@@ -37,19 +41,24 @@ int g_width = 800;
 int g_height = 600;
 
 // D3D Objects
-ID3D11Device *				g_d3dDevice = nullptr;
-ID3D11Device1 *				g_d3dDevice1 = nullptr;
-ID3D11DeviceContext *		g_immediateContext = nullptr;
-ID3D11DeviceContext1 *		g_immediateContext1 = nullptr;
-IDXGISwapChain *			g_swapChain = nullptr;
-IDXGISwapChain1 *			g_swapChain1 = nullptr;
-ID3D11RenderTargetView *	g_renderTargetView = nullptr;
-ID3D11Texture2D *			g_texture = nullptr;
-ID3D11Texture2D *			g_stagingTexture = nullptr;
-ID3D11ShaderResourceView *	g_textureRV = nullptr;
-ID3D11SamplerState *		g_samplerLinear = nullptr;
-ID3D11VertexShader *		g_vertexShader = nullptr;
-ID3D11PixelShader *			g_pixelShader = nullptr;
+ID3D11Device *				g_d3dDevice				= NULL;
+ID3D11Device1 *				g_d3dDevice1			= NULL;
+ID3D11DeviceContext *		g_immediateContext		= NULL;
+ID3D11DeviceContext1 *		g_immediateContext1		= NULL;
+IDXGISwapChain *			g_swapChain				= NULL;
+IDXGISwapChain1 *			g_swapChain1			= NULL;
+ID3D11RenderTargetView *	g_renderTargetView		= NULL;
+ID3D11Texture2D *			g_texture				= NULL;
+ID3D11Texture2D *			g_stagingTexture		= NULL;
+ID3D11ShaderResourceView *	g_textureRV				= NULL;
+ID3D11SamplerState *		g_samplerLinear			= NULL;
+ID3D11VertexShader *		g_vertexShader			= NULL;
+ID3D11PixelShader *			g_pixelShader			= NULL;
+
+// FX Objects
+nvFX::IContainer *			fx_EffectScene			= NULL;
+nvFX::ITechnique *			fx_TechScene			= NULL;
+
 
 void render()
 {
@@ -57,6 +66,29 @@ void render()
 	g_immediateContext->ClearRenderTargetView(g_renderTargetView, blue);
 //	g_immediateContext->Draw(3, 0);
 	g_swapChain->Present(0, 0);
+}
+
+void printMessage(int level, const char * txt)
+{
+	OutputDebugString(txt);
+}
+void nvFXErrorMsg(const char * txt)
+{
+	OutputDebugString(txt);
+}
+void nvFXMsg(const char * txt)
+{
+	OutputDebugString(txt);
+}
+
+bool initFx()
+{
+	nvFX::setErrorCallback(nvFXErrorMsg);
+	nvFX::setMessageCallback(nvFXMsg);
+
+
+
+	return true;
 }
 
 bool initBase()
@@ -460,6 +492,7 @@ int WINAPI WinMain(    HINSTANCE hInstance,
 	{
 		// Initialize more general stuff... typically what can be declared when using GLUT
 		initD3D();
+		initFx();
 
 		//---------------------------------------------------------------------------
 		// Message pump
