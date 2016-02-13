@@ -4,7 +4,8 @@ SET(SHADER_DIR_LOCAL "${D3DSimple_SOURCE_DIR}/shared")
 
 ## Remove d3dx11 and dxguid libraries
 set(PLATFORM_LIBRARIES
-    ${NVFX_D3D_LIBS}
+    ${NVFX_BASE_LIBS}
+    ${NVFX_D3D_LIB}
     ${NSIGHT_LIB}
     ${CUDA_LIB}
 	${DXSDK_d3d11_LIBRARY}
