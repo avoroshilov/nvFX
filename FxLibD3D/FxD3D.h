@@ -38,6 +38,8 @@
 
 #define SHADERCONCAT_USE // DX can't link any sort of Shader objects...
 
+#define USE_D3D11
+
 #include "FxLib.h"
 #ifdef USE_D3D11
 #include <dxgi.h>
