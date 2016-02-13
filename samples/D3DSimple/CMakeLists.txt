@@ -3,7 +3,7 @@ Project(D3DSimple)
 SET(SHADER_DIR_LOCAL "${D3DSimple_SOURCE_DIR}/shared")
 
 set(PLATFORM_LIBRARIES
-    ${NVFX_LIBS}
+    ${NVFX_D3D_LIBS}
     ${NSIGHT_LIB}
     ${CUDA_LIB}
 	${DXSDK_d3d11_LIBRARY}
