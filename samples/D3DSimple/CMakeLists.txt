@@ -2,12 +2,15 @@ Project(D3DSimple)
 
 SET(SHADER_DIR_LOCAL "${D3DSimple_SOURCE_DIR}/shared")
 
+## Remove d3dx11 and dxguid libraries
 set(PLATFORM_LIBRARIES
     ${NVFX_D3D_LIBS}
     ${NSIGHT_LIB}
     ${CUDA_LIB}
 	${DXSDK_d3d11_LIBRARY}
 	${DXSDK_d3dcompiler_LIBRARY}
+	${DXSDK_d3dx11_LIBRARY}
+	${DXSDK_dxguid_LIBRARY}
 )
 include_directories(
     ${nvFx_SOURCE_DIR}/include
