@@ -72,7 +72,7 @@ ResourceD3D::~ResourceD3D()
  **/ /*************************************************************************/ 
 bool ResourceD3D::createRenderResource()
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getDevice();
+    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
     if(m_creationData.appDepSz)
     {
         const int* vp = m_pOwner->getViewport();
@@ -312,7 +312,7 @@ FrameBufferObject::~FrameBufferObject()
 
 bool FrameBufferObject::validate()
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getDevice();
+    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
     bool validated = (m_colors.size() > 0) || (m_dst) ? true : false;
     // run through resources and see if we created the RTViews or if sizes changed
     for(int i=0; i<(int)m_colors.size(); i++)
@@ -473,7 +473,7 @@ bool FrameBufferObject::validate()
  **/ /*************************************************************************/ 
 bool FrameBufferObject::setCurrent(bool bAdjustViewport)
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getDevice();
+    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
     ID3D10RenderTargetView *pRTs[4];
     for(int i=0; i<(int)m_colors.size(); i++)
     {
@@ -501,7 +501,7 @@ bool FrameBufferObject::setCurrent(bool bAdjustViewport)
  **/ /*************************************************************************/ 
 bool FrameBufferObject::blitTo(IFrameBufferObject* pIDst)
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getDevice();
+    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
     FrameBufferObject* pDst = static_cast<FrameBufferObject*>(pIDst);
     int n = pDst->m_colors.size();
     if((int)m_colors.size() < n)
