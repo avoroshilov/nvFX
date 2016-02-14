@@ -2621,9 +2621,52 @@ pspath: PSPATH global_varname_annots '{' CODEBODY {
     delete $4;
 }
 ;
+hlsl11: HLSL11SHADER global_varname_annots '{' CODEBODY {
+    Sglobal_varname &gva = $2;
+    LOGD("HLSL11Shader %s...\n", gva.varName ? gva.varName->c_str() : "Un-named");
+    IShader* pShader = curContainer->createHLSL11Shader(gva.varName ? gva.varName->c_str() : NULL, gva.global);
+    if(pShader)
+    {
+        curShader = pShader->getExInterface();
+        // Now we copy the possible annotations that were filled in arraysz_semantic_annotations_uniformvalueassigment
+        curShader->annotations()->getExInterface()->clear();
+        curShader->annotations()->getExInterface()->copy(curAnnotations);
+
+        if(curShader->getShaderCodeSz() == 0) // ==0 means it needs to have some code loaded now
+            curShader->loadShaderCode($4->c_str(), line_num, file_name.c_str() );
+        else
+            LOGI("Skipping the shader code of %s : some is already loaded\n", gva.varName ? gva.varName->c_str() : "Un-named");
+    }
+    else yyerror("Failed in creating shader");
+    delete gva.varName;
+    delete $4;
+}
+;
+hlsl10: HLSL10SHADER global_varname_annots '{' CODEBODY {
+    Sglobal_varname &gva = $2;
+    LOGD("HLSL10Shader %s...\n", gva.varName ? gva.varName->c_str() : "Un-named");
+    IShader* pShader = curContainer->createHLSL10Shader(gva.varName ? gva.varName->c_str() : NULL, gva.global);
+    if(pShader)
+    {
+        curShader = pShader->getExInterface();
+        // Now we copy the possible annotations that were filled in arraysz_semantic_annotations_uniformvalueassigment
+        curShader->annotations()->getExInterface()->clear();
+        curShader->annotations()->getExInterface()->copy(curAnnotations);
+
+        if(curShader->getShaderCodeSz() == 0) // ==0 means it needs to have some code loaded now
+            curShader->loadShaderCode($4->c_str(), line_num, file_name.c_str() );
+        else
+            LOGI("Skipping the shader code of %s : some is already loaded\n", gva.varName ? gva.varName->c_str() : "Un-named");
+    }
+    else yyerror("Failed in creating shader");
+    delete gva.varName;
+    delete $4;
+}
+;
 /*------------------------------------------------------------------
    HLSL 11 shader
 */
+/*
 hlsl11: HLSL11SHADER global_varname_annots '{' CODEBODY {
     LOGD("HLSL11Shader %s...\n", $2.varName ? $2.varName->c_str() : "Un-named" );
     if($2.global) { // if we need to make this shader GLOBAL
@@ -2659,9 +2702,11 @@ hlsl11: HLSL11SHADER global_varname_annots '{' CODEBODY {
     delete $4;
 }
 ;
+*/
 /*------------------------------------------------------------------
    HLSL 10 shader
 */
+/*
 hlsl10: HLSL10SHADER global_varname_annots '{' CODEBODY {
     LOGD("HLSL10Shader %s...\n", $2.varName ? $2.varName->c_str() : "Un-named" );
     if($2.global) { // if we need to make this shader GLOBAL
@@ -2697,6 +2742,7 @@ hlsl10: HLSL10SHADER global_varname_annots '{' CODEBODY {
     delete $4;
 }
 ;
+*/
 /*------------------------------------------------------------------
    some qualifiers
 */
