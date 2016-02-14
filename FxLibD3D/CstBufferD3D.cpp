@@ -69,21 +69,41 @@ void CstBufferD3D::updateD3D(STarget &t)
             // Because I couldn't use IID_ID3D1XShaderReflection, I used D3D11 instead...
             // TODO: fix this. See D3DShaderProgram::bind()
             D3D11_SHADER_DESC sd;
-            program->m_data.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
-            for(i=0; i<(int)sd.ConstantBuffers; i++)
-            {
-                D3D1X_SHADER_BUFFER_DESC bufDesc;
-                pCst = program->m_data.reflector->GetConstantBufferByIndex(i);
-                pCst->GetDesc(&bufDesc);
-                if(m_name == std::string(bufDesc.Name))
-                    break;
-                pCst = NULL;
-            }
-            if(pCst)
-            {
-                t.bufferIndex = i;
-                t.valid = true;
-            }
+
+			D3DShaderProgram::ShaderData * allShaders[] = {
+				&program->m_dataVS,
+				&program->m_dataGS,
+				&program->m_dataPS
+			};
+			ShaderType allShaderTypes[] = {
+				FX_VTXPROG,
+				FX_GEOMPROG,
+				FX_FRAGPROG
+			};
+
+			// TODO avoroshilov: logic only allow one buffer slot currently, fix this (probably PS will have different slot for the same constant than VS?)
+			//			Target ttype only seem to allow one target, too, check that
+			for (int i = 0, iend = sizeof(allShaders) / sizeof(void *); i < iend; ++i)
+			{
+				D3DShaderProgram::ShaderData & curShaderData = *allShaders[i];
+
+				curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
+				for(i=0; i<(int)sd.ConstantBuffers; i++)
+				{
+					D3D1X_SHADER_BUFFER_DESC bufDesc;
+					pCst = curShaderData.reflector->GetConstantBufferByIndex(i);
+					pCst->GetDesc(&bufDesc);
+					if(m_name == std::string(bufDesc.Name))
+						break;
+					pCst = NULL;
+				}
+				if(pCst)
+				{
+					t.bufferIndex = i;
+					t.valid = true;
+					break;
+				}
+			}
             pCst = NULL;
         } //if(!t.valid)
         if(t.valid)
