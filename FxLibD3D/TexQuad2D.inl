@@ -122,7 +122,7 @@ namespace TexQuad2D
 
 		pd3d1X->IASetInputLayout(TexQuad2D::g_InputLayout);
 		pd3d1X->IASetVertexBuffers(0,1,&TexQuad2D::g_VtxBufferStatic, &strides, &offsets);
-		pd3d1X->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		pd3d1X->IASetPrimitiveTopology(D3D1X_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 		pd3d1X->Draw(4,0);
 
@@ -148,7 +148,7 @@ namespace TexQuad2D
 
 	  pd3d1X->IASetInputLayout(TexQuad2D::g_InputLayout);
 	  pd3d1X->IASetVertexBuffers(0,1,&TexQuad2D::g_VtxBufferStatic, &strides, &offsets);
-	  pd3d1X->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	  pd3d1X->IASetPrimitiveTopology(D3D1X_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	  pd3d1X->Draw(4,0);
 
