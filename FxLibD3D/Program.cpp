@@ -48,7 +48,22 @@ using namespace nvFX;
 D3DShaderProgram::~D3DShaderProgram()
 {
     cleanup();
-    m_data.shaders.clear();
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+	};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+	};
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		allShaders[scnt]->shaders.clear();
+	}
 }
 
 /*************************************************************************/ /**
@@ -61,9 +76,24 @@ D3DShaderProgram::D3DShaderProgram(Container *pCont) : Program(pCont)
     //m_usable = false;
     //m_bound = false;
     m_shaderFlags = 0;
-    m_data.compiledShader = NULL;
-    m_data.reflector = NULL;
-    m_data.shader = NULL;
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+	};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+	};
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		allShaders[scnt]->compiledShader = NULL;
+		allShaders[scnt]->reflector = NULL;
+		allShaders[scnt]->shader = NULL;
+	}
     // D3D is always separate
     pCont->separateShadersEnable(true);
 }
@@ -73,28 +103,51 @@ D3DShaderProgram::D3DShaderProgram(Container *pCont) : Program(pCont)
  **/ /*************************************************************************/ 
 IShader*    D3DShaderProgram::getShader(int n, ShaderType *t)
 {
+	// TODO avoroshilov: !!! add internal counter in the program, and correlate it with the shader, or something
+	// TODO avoroshilov: currently, this implementation doesn't return shader by the number they were added
+
     ShaderMap::iterator it;
-    it = m_data.shaders.begin();
-    while(it != m_data.shaders.end())
-    {
-        if(n == 0)
-        {
-            if(t){
-                switch(m_shaderFlags)
-                {
-                case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
-                case FX_FRAGMENT_SHADER_BIT: *t = FX_VTXPROG; break;
-                case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
-                case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
-                case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
-                default: *t = FX_UNKNOWNSHADER; break;
-                }
-            }
-            return it->second;
-        }
-        --n;
-        ++it;
-    }
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+	};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+	};
+
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		it = allShaders[scnt]->shaders.begin();
+		while(it != allShaders[scnt]->shaders.end())
+		{
+			if(n == 0)
+			{
+				if(t){
+#if 0
+					switch(m_shaderFlags)
+					{
+					case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
+					case FX_FRAGMENT_SHADER_BIT: *t = FX_VTXPROG; break;
+					case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
+					case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
+					case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
+					default: *t = FX_UNKNOWNSHADER; break;
+					}
+#else
+					*t = allShaderTypes[scnt];
+#endif
+				}
+				return it->second;
+			}
+			--n;
+			++it;
+		}
+	}
     return NULL;
 }
 /*************************************************************************/ /**
@@ -104,27 +157,46 @@ IShader*    D3DShaderProgram::getShader(int n, ShaderType *t)
 IShader*    D3DShaderProgram::getShader(IShader *pShader, ShaderType *t)
 {
     ShaderMap::iterator it;
-    it = m_data.shaders.begin();
-    while(it != m_data.shaders.end())
-    {
-        if(it->second == pShader)
-        {
-            if(t){
-                switch(m_shaderFlags)
-                {
-                case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
-                case FX_FRAGMENT_SHADER_BIT: *t = FX_VTXPROG; break;
-                case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
-                case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
-                case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
-                case FX_COMPUTE_SHADER_BIT: *t = FX_COMPUTEPROG; break;
-                default: *t = FX_UNKNOWNSHADER; break;
-                }
-            }
-            return it->second;
-        }
-        ++it;
-    }
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+		};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+		};
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		it = allShaders[scnt]->shaders.begin();
+		while(it != allShaders[scnt]->shaders.end())
+		{
+			if(it->second == pShader)
+			{
+				if(t){
+#if 0
+					switch(m_shaderFlags)
+					{
+					case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
+					case FX_FRAGMENT_SHADER_BIT: *t = FX_VTXPROG; break;
+					case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
+					case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
+					case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
+					case FX_COMPUTE_SHADER_BIT: *t = FX_COMPUTEPROG; break;
+					default: *t = FX_UNKNOWNSHADER; break;
+					}
+#else
+					*t = allShaderTypes[scnt];
+#endif
+				}
+				return it->second;
+			}
+			++it;
+		}
+	}
     return NULL;
 }
 /*************************************************************************/ /**
@@ -134,24 +206,44 @@ IShader*    D3DShaderProgram::getShader(IShader *pShader, ShaderType *t)
 IShader*    D3DShaderProgram::getShader(const char *name, ShaderType *t)
 {
     ShaderMap::iterator it;
-    it = m_data.shaders.find(name);
-    if(it != m_data.shaders.end())
-    {
-        if(t){
-            switch(m_shaderFlags)
-            {
-            case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
-            case FX_FRAGMENT_SHADER_BIT: *t = FX_VTXPROG; break;
-            case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
-            case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
-            case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
-            case FX_COMPUTE_SHADER_BIT: *t = FX_COMPUTEPROG; break;
-            //case FX_PATH_CODE_BIT: *t = FX_PATHPROG; break;
-            default: *t = FX_UNKNOWNSHADER; break;
-            }
-        }
-        return it->second;
-    }
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+		};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+		};
+
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		it = allShaders[scnt]->shaders.find(name);
+		if(it != allShaders[scnt]->shaders.end())
+		{
+			if(t){
+#if 0
+				switch(m_shaderFlags)
+				{
+				case FX_VERTEX_SHADER_BIT: *t = FX_VTXPROG; break;
+				case FX_FRAGMENT_SHADER_BIT: *t = FX_FRAGPROG; break;
+				case FX_GEOMETRY_SHADER_BIT: *t = FX_GEOMPROG; break;
+				case FX_TESS_CONTROL_SHADER_BIT: *t = FX_TCSPROG; break;
+				case FX_TESS_EVALUATION_SHADER_BIT: *t = FX_TESPROG; break;
+				case FX_COMPUTE_SHADER_BIT: *t = FX_COMPUTEPROG; break;
+				//case FX_PATH_CODE_BIT: *t = FX_PATHPROG; break;
+				default: *t = FX_UNKNOWNSHADER; break;
+				}
+#else
+				*t = allShaderTypes[scnt];
+#endif
+			}
+			return it->second;
+		}
+	}
     return NULL;
 }
 /*************************************************************************/ /**
@@ -160,7 +252,10 @@ IShader*    D3DShaderProgram::getShader(const char *name, ShaderType *t)
  **/ /*************************************************************************/ 
 int         D3DShaderProgram::getNumShaders()
 {
-    return m_data.shaders.size();
+    return
+		m_dataVS.shaders.size() +
+		m_dataGS.shaders.size() +
+		m_dataPS.shaders.size();
 }
 /*************************************************************************/ /**
  ** 
@@ -171,35 +266,37 @@ bool D3DShaderProgram::addShader(ShaderType type, IShader* pShader, IContainer* 
     switch(type)
     {
     case FX_VTXPROG:
-        if(m_shaderFlags & (~FX_VERTEX_SHADER_BIT))
-            return false;
-        m_shaderFlags = FX_VERTEX_SHADER_BIT;
-        m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+        //if(m_shaderFlags & (~FX_VERTEX_SHADER_BIT))
+        //    return false;
+        m_shaderFlags |= FX_VERTEX_SHADER_BIT;
+        m_dataVS.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
         break;
     case FX_FRAGPROG:
-        if(m_shaderFlags & (~FX_FRAGMENT_SHADER_BIT))
-            return false;
-        m_shaderFlags = FX_FRAGMENT_SHADER_BIT;
-        m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+        //if(m_shaderFlags & (~FX_FRAGMENT_SHADER_BIT))
+        //    return false;
+        m_shaderFlags |= FX_FRAGMENT_SHADER_BIT;
+        m_dataPS.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
         break;
     case FX_GEOMPROG:
-        if(m_shaderFlags & (~FX_GEOMETRY_SHADER_BIT))
-            return false;
-        m_shaderFlags = FX_GEOMETRY_SHADER_BIT;
-        m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+        //if(m_shaderFlags & (~FX_GEOMETRY_SHADER_BIT))
+        //    return false;
+        m_shaderFlags |= FX_GEOMETRY_SHADER_BIT;
+        m_dataGS.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
         break;
     case FX_TCSPROG:
-        if(m_shaderFlags & (~FX_TESS_CONTROL_SHADER_BIT))
-            return false;
-        m_shaderFlags = FX_TESS_CONTROL_SHADER_BIT;
-        m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+        //if(m_shaderFlags & (~FX_TESS_CONTROL_SHADER_BIT))
+        //    return false;
+        m_shaderFlags |= FX_TESS_CONTROL_SHADER_BIT;
+        //m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+		assert(0);
         break;
     case FX_TESPROG:
-        if(m_shaderFlags & (~FX_TESS_EVALUATION_SHADER_BIT))
-            return false;
-        m_shaderFlags = FX_TESS_EVALUATION_SHADER_BIT;
-        m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
-        break;
+        //if(m_shaderFlags & (~FX_TESS_EVALUATION_SHADER_BIT))
+        //    return false;
+        m_shaderFlags |= FX_TESS_EVALUATION_SHADER_BIT;
+        //m_data.shaders[std::string(pShader->getName())] = static_cast<D3DShader*>(pShader);
+		assert(0);
+		break;
     default:
 assert(1);
         return false;
@@ -239,13 +336,7 @@ void D3DShaderProgram::cleanup()
         (*icshd)->cleanupShader();
         ++icshd;
     }*/
-    ShaderMap::iterator iShd = m_data.shaders.begin();
-	ShaderMap::iterator iEnd = m_data.shaders.end();
-    for(;iShd != iEnd; iShd++)
-    {
-        //iShd.second->removeTarget(this);
-		iShd->second->removeUser(this);
-	}
+
 #define CLEANUPSHD(shd)\
     if(shd.shader)         shd.shader->Release();\
     if(shd.compiledShader) shd.compiledShader->Release();\
@@ -255,8 +346,32 @@ void D3DShaderProgram::cleanup()
     shd.code.clear();\
     shd.reflector = NULL;
 
-	// TODO avoroshilov: see if more than one shader/reflector/etc should be released here
-    CLEANUPSHD(m_data);
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+	};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+	};
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		ShaderMap::iterator iShd = allShaders[scnt]->shaders.begin();
+		ShaderMap::iterator iEnd = allShaders[scnt]->shaders.end();
+		for(;iShd != iEnd; iShd++)
+		{
+			//iShd.second->removeTarget(this);
+			iShd->second->removeUser(this);
+		}
+
+		// TODO avoroshilov: see if more than one shader/reflector/etc should be released here
+		CLEANUPSHD((*allShaders[scnt]));
+	}
+
+#undef CLEANUPSHD
 }
 /*************************************************************************/ /**
  ** 
@@ -357,172 +472,212 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
 
     if(m_linkNeeded)
     {
-        //
-        // add common parts for line-number conversion :-(
-        //
-        std::vector<D3DShader::codeInfo> codeBlocks;
-        int lineOffset = 0;
-        ShaderMap::iterator iShd, iEnd;
-        iShd = m_data.shaders.begin();
-        iEnd = m_data.shaders.end();
-        for(;iShd != iEnd; iShd++)
-        {
-            for(int n=0; n<(int)iShd->second->m_startLineNumbers.size(); n++)
-                codeBlocks.push_back(iShd->second->m_startLineNumbers[n]);
-        }
-        m_data.code.clear();
-        // Add common header code
-        D3DShader *pShd;
-        for(int i=0; pShd = static_cast<D3DShader*>(pContainer->findShader(i)); i++)
-            if(*(pShd->getName()) == '\0')
-            {
-                if(m_data.shaders.size()>0)
-                    m_data.code += pShd->getShaderCode();
-            }
-        if(m_data.shaders.size()>0)
-        {
-            iShd = m_data.shaders.begin();
-            iEnd = m_data.shaders.end();
-            for(;iShd != iEnd; iShd++)
-                m_data.code += iShd->second->getShaderCode();
-        }
-        //
-        // Compile the vertex shader
-        //
-        const char *profile;
-        switch(m_shaderFlags)
-        {
-#pragma MESSAGE(__FILE__"(298) : TODO TODO TODO TODO TODO : allow to chose the shader models!")
-        case FX_VERTEX_SHADER_BIT: profile = "vs_4_0"; break;
-        case FX_FRAGMENT_SHADER_BIT: profile = "ps_4_0"; break;
-        case FX_GEOMETRY_SHADER_BIT: profile = "gs_4_0"; break;
-        case FX_TESS_CONTROL_SHADER_BIT: profile = "hs_5_0"; break;
-        case FX_TESS_EVALUATION_SHADER_BIT: profile = "ds_5_0"; break;
-        default: profile = NULL; assert(1); break;
-        }
-        /*if*/assert(m_data.shaders.size()>0);
-        {
-            hr = D3DX1XCompileFromMemory(
-              m_data.code.c_str(), m_data.code.size(), "Shader",
-              NULL,//CONST D3D1X_SHADER_MACRO*
-              NULL, //LPD3D1XINCLUDE pInclude
-              "main",
-              profile,
-              0,//Flags1
-              0,//Flags2
-              NULL,//ID3DX10ThreadPump *pPump
-              &m_data.compiledShader,
-              &shaderErrors, NULL);
-    //OutputDebugStringA(m_data.code.c_str());
-            if(FAILED(hr))
-            {
-                err = true;
-                LPCSTR p = (LPCSTR)shaderErrors->GetBufferPointer();
-                replaceLineNumbers(buf, 1024, p, codeBlocks);
-                nvFX::printf("Log for Vtx Shader: \n%s\n", buf);
-            }
-            else
-            {
-                switch(m_shaderFlags)
-                {
-                case FX_VERTEX_SHADER_BIT:
-                    hr = pd3d1X->CreateVertexShader(m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), 
-                    #ifdef USE_D3D11
-                    NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
-                    #endif
-                    &m_data.vtxShader);
-                    break;
-                case FX_FRAGMENT_SHADER_BIT:
-                    hr = pd3d1X->CreatePixelShader(m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), 
-                    #ifdef USE_D3D11
-                    NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
-                    #endif
-                    &m_data.pixShader);
-                    break;
-                case FX_GEOMETRY_SHADER_BIT:
-                    hr = pd3d1X->CreateGeometryShader(m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), 
-                    #ifdef USE_D3D11
-                    NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
-                    #endif
-                    &m_data.gsShader);
-                    break;
-                case FX_TESS_CONTROL_SHADER_BIT:
-                    //#ifdef USE_D3D11
-                    //hr = pd3d1X->CreateHullShader(m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), 
-                    //NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
-                    //&m_data.hullShader);
-                    //#else
-                    assert(1);
-                    //#endif
-                case FX_TESS_EVALUATION_SHADER_BIT:
-                    //#ifdef USE_D3D11
-                    //hr = pd3d1X->CreateDomainShader(m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), 
-                    //NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
-                    //&m_data.evalShader);
-                    //#else
-                    assert(1);
-                    //#endif
-                }
-                if(FAILED(hr))
-                {
-                    err = true;
-                    LPCSTR p = (LPCSTR)shaderErrors->GetBufferPointer();
-                    replaceLineNumbers(buf, 1024, p, codeBlocks);
-                    nvFX::printf("Shader creation error : \n%s\n", p);
-                }
-                // IID_ID3D1XShaderReflection doesn't work... WTF ?!?
-                hr = D3DReflect( m_data.compiledShader->GetBufferPointer(), m_data.compiledShader->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&m_data.reflector);
-                if(FAILED(hr))
-                {
-                    err = true;
-                    nvFX::printf("Shader reflector failed\n");
-                }
-                //
-                // Let's check if the shader forgot some parameters in $Globals cbuffer
-                //
-                D3D11_SHADER_DESC sd;
-                ID3D1XShaderReflectionConstantBuffer *pCst = NULL;
-                m_data.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
-                D3D1X_SHADER_BUFFER_DESC bufDesc;
-                bufDesc.Name = NULL;
-                pCst = m_data.reflector->GetConstantBufferByName("$Globals");
-                pCst->GetDesc(&bufDesc);
-                if(bufDesc.Name && (!strcmp(bufDesc.Name, "$Globals")))
-                {
-                    nvFX::printf("WARNING: some uniform parameters are outside of any cbuffer and won't be initialized properly : \n");
-                    for(int i=0; i<(int)bufDesc.Variables; i++)
-                    {
-                        ID3D1XShaderReflectionVariable* pVar = pCst->GetVariableByIndex(i);
-                        D3D11_SHADER_VARIABLE_DESC vd; // because of a bug...?!?
-                        pVar->GetDesc((D3D1X_SHADER_VARIABLE_DESC*)&vd);
-                        nvFX::printf("%s\n", vd.Name);
-                    }
-                }
+		D3DShaderProgram::ShaderData * allShaders[] = {
+			&m_dataVS,
+			&m_dataGS,
+			&m_dataPS
+		};
+		ShaderType allShaderTypes[] = {
+			FX_VTXPROG,
+			FX_GEOMPROG,
+			FX_FRAGPROG
+		};
+		int allShaderFlags[] = {
+			FX_VERTEX_SHADER_BIT,
+			FX_GEOMETRY_SHADER_BIT,
+			FX_FRAGMENT_SHADER_BIT
+		};
 
-                if(shaderErrors)
-                    shaderErrors->Release();
-            }
-        } //if(m_data.shaders.size()>0)
-        if(err)
-            return false;
-        else
-            m_linkNeeded = false;
+		for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+		{
+			if ((m_shaderFlags & allShaderFlags[scnt]) == 0)
+				continue;
+
+			D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
+
+			//
+			// add common parts for line-number conversion :-(
+			//
+			std::vector<D3DShader::codeInfo> codeBlocks;
+			int lineOffset = 0;
+			ShaderMap::iterator iShd, iEnd;
+			iShd = curShaderData.shaders.begin();
+			iEnd = curShaderData.shaders.end();
+			for(;iShd != iEnd; iShd++)
+			{
+				for(int n=0; n<(int)iShd->second->m_startLineNumbers.size(); n++)
+					codeBlocks.push_back(iShd->second->m_startLineNumbers[n]);
+			}
+			curShaderData.code.clear();
+			// Add common header code
+			D3DShader *pShd;
+			for(int i=0; pShd = static_cast<D3DShader*>(pContainer->findShader(i)); i++)
+				if(*(pShd->getName()) == '\0')
+				{
+					if(curShaderData.shaders.size()>0)
+						curShaderData.code += pShd->getShaderCode();
+				}
+			if(curShaderData.shaders.size()>0)
+			{
+				iShd = curShaderData.shaders.begin();
+				iEnd = curShaderData.shaders.end();
+				for(;iShd != iEnd; iShd++)
+					curShaderData.code += iShd->second->getShaderCode();
+			}
+			//
+			// Compile the vertex shader
+			//
+			const char *profile;
+#pragma MESSAGE(__FILE__"(298) : TODO TODO TODO TODO TODO : allow to chose the shader models!")
+#if 0
+			switch(m_shaderFlags)
+			{
+			case FX_VERTEX_SHADER_BIT: profile = "vs_4_0"; break;
+			case FX_FRAGMENT_SHADER_BIT: profile = "ps_4_0"; break;
+			case FX_GEOMETRY_SHADER_BIT: profile = "gs_4_0"; break;
+			case FX_TESS_CONTROL_SHADER_BIT: profile = "hs_5_0"; break;
+			case FX_TESS_EVALUATION_SHADER_BIT: profile = "ds_5_0"; break;
+			default: profile = NULL; assert(1); break;
+			}
+#else
+			switch(allShaderTypes[scnt])
+			{
+			case FX_VTXPROG: profile = "vs_4_0"; break;
+			case FX_FRAGPROG: profile = "ps_4_0"; break;
+			case FX_GEOMPROG: profile = "gs_4_0"; break;
+			case FX_TCSPROG: profile = "hs_5_0"; break;
+			case FX_TESPROG: profile = "ds_5_0"; break;
+			default: profile = NULL; assert(1); break;
+			}
+#endif
+			/*if*/assert(curShaderData.shaders.size()>0);
+			{
+				hr = D3DX1XCompileFromMemory(
+				  curShaderData.code.c_str(), curShaderData.code.size(), "Shader",
+				  NULL,//CONST D3D1X_SHADER_MACRO*
+				  NULL, //LPD3D1XINCLUDE pInclude
+				  "main",	// TODO avoroshilov: allow selecting different entry points
+				  profile,
+				  0,//Flags1
+				  0,//Flags2
+				  NULL,//ID3DX10ThreadPump *pPump
+				  &curShaderData.compiledShader,
+				  &shaderErrors, NULL);
+		//OutputDebugStringA(m_data.code.c_str());
+				if(FAILED(hr))
+				{
+					err = true;
+					LPCSTR p = (LPCSTR)shaderErrors->GetBufferPointer();
+					replaceLineNumbers(buf, 1024, p, codeBlocks);
+					nvFX::printf("Log for Vtx Shader: \n%s\n", buf);
+				}
+				else
+				{
+					switch(m_shaderFlags)
+					{
+					case FX_VERTEX_SHADER_BIT:
+						hr = pd3d1X->CreateVertexShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.vtxShader);
+						break;
+					case FX_FRAGMENT_SHADER_BIT:
+						hr = pd3d1X->CreatePixelShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.pixShader);
+						break;
+					case FX_GEOMETRY_SHADER_BIT:
+						hr = pd3d1X->CreateGeometryShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.gsShader);
+						break;
+					case FX_TESS_CONTROL_SHADER_BIT:
+						//#ifdef USE_D3D11
+						//hr = pd3d1X->CreateHullShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						//NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						//&curShaderData.hullShader);
+						//#else
+						assert(1);
+						//#endif
+					case FX_TESS_EVALUATION_SHADER_BIT:
+						//#ifdef USE_D3D11
+						//hr = pd3d1X->CreateDomainShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						//NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						//&curShaderData.evalShader);
+						//#else
+						assert(1);
+						//#endif
+					}
+					if(FAILED(hr))
+					{
+						err = true;
+						LPCSTR p = (LPCSTR)shaderErrors->GetBufferPointer();
+						replaceLineNumbers(buf, 1024, p, codeBlocks);
+						nvFX::printf("Shader creation error : \n%s\n", p);
+					}
+					// IID_ID3D1XShaderReflection doesn't work... WTF ?!?
+					hr = D3DReflect( curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&curShaderData.reflector);
+					if(FAILED(hr))
+					{
+						err = true;
+						nvFX::printf("Shader reflector failed\n");
+					}
+					//
+					// Let's check if the shader forgot some parameters in $Globals cbuffer
+					//
+					D3D11_SHADER_DESC sd;
+					ID3D1XShaderReflectionConstantBuffer *pCst = NULL;
+					curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
+					D3D1X_SHADER_BUFFER_DESC bufDesc;
+					bufDesc.Name = NULL;
+					pCst = curShaderData.reflector->GetConstantBufferByName("$Globals");
+					pCst->GetDesc(&bufDesc);
+					if(bufDesc.Name && (!strcmp(bufDesc.Name, "$Globals")))
+					{
+						nvFX::printf("WARNING: some uniform parameters are outside of any cbuffer and won't be initialized properly : \n");
+						for(int i=0; i<(int)bufDesc.Variables; i++)
+						{
+							ID3D1XShaderReflectionVariable* pVar = pCst->GetVariableByIndex(i);
+							D3D11_SHADER_VARIABLE_DESC vd; // because of a bug...?!?
+							pVar->GetDesc((D3D1X_SHADER_VARIABLE_DESC*)&vd);
+							nvFX::printf("%s\n", vd.Name);
+						}
+					}
+
+					if(shaderErrors)
+						shaderErrors->Release();
+				}
+			} //if(m_data.shaders.size()>0)
+			if(err)
+				return false;
+			else
+				m_linkNeeded = false;
+		}
     } //if(m_linkNeeded)
+
+
+
     //
     // Activate the shaders
     //
 #ifdef USE_D3D11
     // TODO: see how to take advantage of ID3D11ClassInstance * argument !
+#if 0
     switch(m_shaderFlags)
     {
     case FX_VERTEX_SHADER_BIT:
-        pd3dDC->VSSetShader(m_data.vtxShader, NULL, 0);
+        pd3dDC->VSSetShader(m_dataVS.vtxShader, NULL, 0);
         break;
     case FX_FRAGMENT_SHADER_BIT:
-        pd3dDC->PSSetShader(m_data.pixShader, NULL, 0);
+        pd3dDC->PSSetShader(m_dataPS.pixShader, NULL, 0);
         break;
     case FX_GEOMETRY_SHADER_BIT:
-        pd3dDC->GSSetShader(m_data.gsShader, NULL, 0);
+        pd3dDC->GSSetShader(m_dataGS.gsShader, NULL, 0);
         break;
     case FX_TESS_CONTROL_SHADER_BIT:
         //pd3dDC->...SetShader(m_data.);
@@ -533,6 +688,18 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
     default:
         assert(1);
     }
+#else
+	// We need to un-set shaders probably to not pollute state, but maybe it is not needed because 'unbind'
+	bool isVS = (m_shaderFlags & FX_VERTEX_SHADER_BIT) != 0;
+	bool isHS = (m_shaderFlags & FX_TESS_CONTROL_SHADER_BIT) != 0;
+	bool isDS = (m_shaderFlags & FX_TESS_EVALUATION_SHADER_BIT) != 0;
+	bool isGS = (m_shaderFlags & FX_GEOMETRY_SHADER_BIT) != 0;
+	bool isPS = (m_shaderFlags & FX_FRAGMENT_SHADER_BIT) != 0;
+
+	pd3dDC->VSSetShader(isVS ? m_dataVS.vtxShader : NULL, NULL, 0);
+	pd3dDC->GSSetShader(isGS ? m_dataGS.gsShader : NULL, NULL, 0);
+	pd3dDC->PSSetShader(isPS ? m_dataPS.pixShader : NULL, NULL, 0);
+#endif
 #else
     switch(m_shaderFlags)
     {
@@ -702,21 +869,38 @@ int D3DShaderProgram::getSubRoutineID(const char *name, GLenum shadertype)
 int  D3DShaderProgram::getAttribLocation(const char* attrName)
 {
 DebugBreak(); // TO TEST
-    if(!m_data.reflector)
-        return -1;
-    D3D1X_SHADER_DESC sd;
-    m_data.reflector->GetDesc(&sd);
-    for(int i=0; i<(int)sd.InputParameters; i++)
-    {
-        D3D1X_SIGNATURE_PARAMETER_DESC ipd;
-        m_data.reflector->GetInputParameterDesc(i, &ipd);
-        if(!strcmp(ipd.SemanticName, attrName))
-            return i;
-        char s[50];
-        sprintf_s(s, 49, "%s%d", ipd.SemanticName, ipd.SemanticIndex);
-        if(!strcmp(s, attrName))
-            return i;
-    }
+
+	D3DShaderProgram::ShaderData * allShaders[] = {
+		&m_dataVS,
+		&m_dataGS,
+		&m_dataPS
+	};
+	ShaderType allShaderTypes[] = {
+		FX_VTXPROG,
+		FX_GEOMPROG,
+		FX_FRAGPROG
+	};
+
+	for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+	{
+		D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
+
+		if(!curShaderData.reflector)
+			return -1;
+		D3D1X_SHADER_DESC sd;
+		curShaderData.reflector->GetDesc(&sd);
+		for(int i=0; i<(int)sd.InputParameters; i++)
+		{
+			D3D1X_SIGNATURE_PARAMETER_DESC ipd;
+			curShaderData.reflector->GetInputParameterDesc(i, &ipd);
+			if(!strcmp(ipd.SemanticName, attrName))
+				return i;
+			char s[50];
+			sprintf_s(s, 49, "%s%d", ipd.SemanticName, ipd.SemanticIndex);
+			if(!strcmp(s, attrName))
+				return i;
+		}
+	}
     return -1;
 }
 void D3DShaderProgram::bindAttribLocation(int i, const char* attrName)
@@ -725,14 +909,14 @@ void D3DShaderProgram::bindAttribLocation(int i, const char* attrName)
 
 void* D3DShaderProgram::getD3DIASignature()
 {
-    if(m_data.compiledShader && (m_shaderFlags & FX_VERTEX_SHADER_BIT))
-        return m_data.compiledShader->GetBufferPointer();
+    if(m_dataVS.compiledShader && (m_shaderFlags & FX_VERTEX_SHADER_BIT))
+        return m_dataVS.compiledShader->GetBufferPointer();
     return NULL;
 }
 int D3DShaderProgram::getD3DIASignatureSize()
 {
-    if(m_data.compiledShader && (m_shaderFlags & FX_VERTEX_SHADER_BIT))
-        return m_data.compiledShader->GetBufferSize();
+    if(m_dataVS.compiledShader && (m_shaderFlags & FX_VERTEX_SHADER_BIT))
+        return m_dataVS.compiledShader->GetBufferSize();
     return 0;
 }
 

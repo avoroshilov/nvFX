@@ -158,30 +158,48 @@ SamplerState*  SamplerStateD3D::update(void *data, Pass *pass, int layerID, bool
             //
             D3D11_SHADER_DESC sd;
             D3D1X_SHADER_INPUT_BIND_DESC r;
-            if(program->m_data.reflector)
-            {
-                program->m_data.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
-                for(int i=0; i<(int)sd.BoundResources; i++)
-                {
-                    program->m_data.reflector->GetResourceBindingDesc(i, &r);
-                    if(r.Type == D3D10_SIT_SAMPLER) // type is still D3D10_SHADER_INPUT_TYPE
-                    {
-                        if(!strcmp(r.Name, m_name.c_str()))
-                        {
-                            t.index = r.BindPoint;
-                            switch(t.ttype)
-                            {
-                            case THLSL_VTX: pd3d1X->VSSetSamplers(t.index, 1, &samplerState); break;
-                            case THLSL_PIX: pd3d1X->PSSetSamplers(t.index, 1, &samplerState); break;
-                            //case THLSL_GS: pd3d1X->GSSetSamplers(t.index, 1, &samplerState); break;
-                            //case THLSL_HS: pd3d1X->HSSetSamplers(t.index, 1, &samplerState); break;
-                            //case THLSL_DS: pd3d1X->DSSetSamplers(t.index, 1, &samplerState); break;
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+
+			D3DShaderProgram::ShaderData * allShaders[] = {
+				&program->m_dataVS,
+				&program->m_dataGS,
+				&program->m_dataPS
+			};
+			ShaderType allShaderTypes[] = {
+				FX_VTXPROG,
+				FX_GEOMPROG,
+				FX_FRAGPROG
+			};
+
+			for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+			{
+				D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
+
+				if(curShaderData.reflector)
+				{
+					curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
+					for(int i=0; i<(int)sd.BoundResources; i++)
+					{
+						curShaderData.reflector->GetResourceBindingDesc(i, &r);
+						if(r.Type == D3D10_SIT_SAMPLER) // type is still D3D10_SHADER_INPUT_TYPE
+						{
+							if(!strcmp(r.Name, m_name.c_str()))
+							{
+								t.index = r.BindPoint;
+								switch(t.ttype)
+								{
+								case THLSL_VTX: pd3d1X->VSSetSamplers(t.index, 1, &samplerState); break;
+								case THLSL_PIX: pd3d1X->PSSetSamplers(t.index, 1, &samplerState); break;
+								//case THLSL_GS: pd3d1X->GSSetSamplers(t.index, 1, &samplerState); break;
+								//case THLSL_HS: pd3d1X->HSSetSamplers(t.index, 1, &samplerState); break;
+								//case THLSL_DS: pd3d1X->DSSetSamplers(t.index, 1, &samplerState); break;
+								}
+								break;
+							}
+						}
+					}
+				}
+
+			}
             // Store the target if the shader needed it
             if(t.index >= 0)
             {

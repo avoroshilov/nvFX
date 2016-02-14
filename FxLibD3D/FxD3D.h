@@ -301,8 +301,11 @@ private:
     };
     bool        m_linkNeeded;
     int         m_shaderFlags; /// place where we store FX_VERTEX_SHADER_BIT etc. NOTE: only one flag is allowed in D3D (one shader per Program... separable mode)
-    ShaderData  m_data; ///< shader data. Now only one : a program can host only one shader at a time
-    Container*          m_container; ///< used to call eprintf, for example
+	ShaderData  m_dataVS; ///< shader data for all Vertex Shaders attached to a program
+	ShaderData  m_dataGS; ///< shader data for all Geometry Shaders attached to a program
+	ShaderData  m_dataPS; ///< shader data for all Pixel Shaders attached to a program
+	// TODO: add the others
+	Container*          m_container; ///< used to call eprintf, for example
     void replaceLineNumbers(char *strDest, int len, LPCSTR log, std::vector<D3DShader::codeInfo> &codeBlocks);
 public:
     D3DShaderProgram(Container *pCont);

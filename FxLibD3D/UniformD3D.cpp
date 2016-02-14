@@ -83,29 +83,46 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
             //
             t.bufferIndex = -1;
             ID3D1XShaderReflectionConstantBuffer *pCst = NULL;
-            int i;
             // Because I couldn't use IID_ID3D1XShaderReflection, I used D3D11 instead...
             // TODO: fix this. See D3DShaderProgram::bind()
             D3D11_SHADER_DESC sd;
-            if(program->m_data.reflector)
-            {
-                program->m_data.reflector->GetDesc((D3D1X(SHADER_DESC)*)&sd);
-                for(i=0; i<(int)sd.ConstantBuffers; i++)
-                {
-                    pCst = program->m_data.reflector->GetConstantBufferByIndex(i);
-                    D3D1X(SHADER_BUFFER_DESC) bufDesc;
-                    pCst->GetDesc(&bufDesc);
-                    if(m_name == std::string(bufDesc.Name))
-                        break;
-                    pCst = NULL;
-                }
-                if(pCst)
-                {
-                    t.bufferIndex = i;
-                    m_type = Uniform::TCB; // force the type because it obviously is a constant buffer
-                    t.valid = true;
-                }
-            }
+
+			D3DShaderProgram::ShaderData * allShaders[] = {
+				&program->m_dataVS,
+				&program->m_dataGS,
+				&program->m_dataPS
+			};
+			ShaderType allShaderTypes[] = {
+				FX_VTXPROG,
+				FX_GEOMPROG,
+				FX_FRAGPROG
+			};
+
+			for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+			{
+				D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
+
+				if(curShaderData.reflector)
+				{
+					curShaderData.reflector->GetDesc((D3D1X(SHADER_DESC)*)&sd);
+					int i;
+					for(i=0; i<(int)sd.ConstantBuffers; i++)
+					{
+						pCst = curShaderData.reflector->GetConstantBufferByIndex(i);
+						D3D1X(SHADER_BUFFER_DESC) bufDesc;
+						pCst->GetDesc(&bufDesc);
+						if(m_name == std::string(bufDesc.Name))
+							break;
+						pCst = NULL;
+					}
+					if(pCst)
+					{
+						t.bufferIndex = i;
+						m_type = Uniform::TCB; // force the type because it obviously is a constant buffer
+						t.valid = true;
+					}
+				}
+			}
             pCst = NULL;
         } //if(!t.valid)
         //
@@ -119,27 +136,44 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
             D3D11_SHADER_DESC sd;
             D3D1X_SHADER_INPUT_BIND_DESC r;
             r.Name = NULL;
-            if(program->m_data.reflector)
-            {
-                int i;
-                program->m_data.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
-                for(i=0; i<(int)sd.BoundResources; i++)
-                {
-                    program->m_data.reflector->GetResourceBindingDesc(i, &r);
-                    if(r.Type == D3D10_SIT_TEXTURE) // type is still D3D10_SHADER_INPUT_TYPE
-                    {
-                        if(!strcmp(r.Name, m_name.c_str()))
-                            break;
-                    }
-                    r.Name = NULL;
-                }
-                if(r.Name)
-                {
-                    t.uniformLocation = r.BindPoint;
-                    // TODO: check consistency with the uniform type
-                    //m_type = ... ?
-                    t.valid = true;
-                }
+
+			D3DShaderProgram::ShaderData * allShaders[] = {
+				&program->m_dataVS,
+				&program->m_dataGS,
+				&program->m_dataPS
+			};
+			ShaderType allShaderTypes[] = {
+				FX_VTXPROG,
+				FX_GEOMPROG,
+				FX_FRAGPROG
+			};
+
+			for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
+			{
+				D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
+
+				if(curShaderData.reflector)
+				{
+					int i;
+					curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
+					for(i=0; i<(int)sd.BoundResources; i++)
+					{
+						curShaderData.reflector->GetResourceBindingDesc(i, &r);
+						if(r.Type == D3D10_SIT_TEXTURE) // type is still D3D10_SHADER_INPUT_TYPE
+						{
+							if(!strcmp(r.Name, m_name.c_str()))
+								break;
+						}
+						r.Name = NULL;
+					}
+					if(r.Name)
+					{
+						t.uniformLocation = r.BindPoint;
+						// TODO: check consistency with the uniform type
+						//m_type = ... ?
+						t.valid = true;
+					}
+				}
             }
         }
 #ifdef USE_D3D11
