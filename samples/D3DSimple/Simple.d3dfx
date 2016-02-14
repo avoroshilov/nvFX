@@ -1,0 +1,84 @@
+/*
+HLSL10Shader
+{
+
+struct VSOut
+{
+    float4 position : SV_Position;
+    float2 texcoord: TexCoord;
+};
+
+}
+*/
+//--------------------------------------------------------------------------------------
+// sampler states are outside of HLSL.
+//--------------------------------------------------------------------------------------
+SamplerState nearestSampler
+{
+    TEXTURE_MIN_FILTER = NEAREST;
+    TEXTURE_MAG_FILTER = NEAREST;
+}
+SamplerState linearSampler
+{
+    TEXTURE_MIN_FILTER = LINEAR;
+    TEXTURE_MAG_FILTER = LINEAR;
+}
+
+//--------------------------------------------------------------------------------------
+//    Fullscreen quad Vertex shader
+//--------------------------------------------------------------------------------------
+HLSL10Shader global fullscreenquadVS
+{
+	struct VSOut
+	{
+		float4 position : SV_Position;
+		float2 texcoord: TexCoord;
+	};
+
+	VSOut main(uint VertexID: SV_VertexID)
+	{
+		VSOut output;
+
+		output.texcoord = float2((VertexID << 1) & 2, VertexID & 2);
+		output.position = float4(output.texcoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
+
+		return output;
+	}
+	
+}
+//--------------------------------------------------------------------------------------
+//    Simple texture fetch
+//--------------------------------------------------------------------------------------
+HLSL10Shader global fullscreenquadPS
+{
+	struct VSOut
+	{
+		float4 position : SV_Position;
+		float2 texcoord: TexCoord;
+	};
+
+	float4 main( VSOut frag ): SV_Target
+	{
+		return float4( frag.texcoord, 0.0, 1.0 );
+	}
+}
+//**************************************************************************************
+//**************************************************************************************
+//****
+//**** EFFECTS EFFECTS EFFECTS EFFECTS EFFECTS EFFECTS EFFECTS EFFECTS EFFECTS      ****
+//****
+//**************************************************************************************
+//**************************************************************************************
+
+Technique Base
+{
+    Pass P1
+    {
+        DEPTH_TEST = FALSE;
+        renderMode = fullscreen_quad;
+        currentTarget = backbuffer;
+        VertexProgram = fullscreenquadVS;
+        FragmentProgram = fullscreenquadPS;
+        CULL_FACE = false;
+    }
+}

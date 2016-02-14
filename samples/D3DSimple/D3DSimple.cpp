@@ -86,7 +86,22 @@ bool initFx()
 	nvFX::setErrorCallback(nvFXErrorMsg);
 	nvFX::setMessageCallback(nvFXMsg);
 
+	fx_EffectScene = nvFX::IContainer::create();
 
+#if 0
+	bool bRes = nvFX::loadEffectFromFile(fx_EffectScene, "Simple.d3dfx");
+	if(!bRes)
+		bRes = nvFX::loadEffectFromFile(fx_EffectScene, SOURCE_DIR "/Simple.d3dfx");
+#else
+	bool bRes = nvFX::loadEffectFromFile(fx_EffectScene, SOURCE_DIR "/Simple.d3dfx");
+#endif
+	if(!bRes)
+	{
+		OutputDebugStringA("Effect file not found. Make sure it is close to the exe file...");
+		return false;
+	}
+	fx_TechScene = fx_EffectScene->findTechnique(0);
+	fx_TechScene->validate();
 
 	return true;
 }
