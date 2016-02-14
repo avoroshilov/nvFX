@@ -573,6 +573,7 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
 				}
 				else
 				{
+#if 0
 					switch(m_shaderFlags)
 					{
 					case FX_VERTEX_SHADER_BIT:
@@ -613,6 +614,48 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
 						assert(1);
 						//#endif
 					}
+#else
+				switch(allShaderTypes[scnt])
+					{
+					case FX_VTXPROG:
+						hr = pd3d1X->CreateVertexShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.vtxShader);
+						break;
+					case FX_FRAGPROG:
+						hr = pd3d1X->CreatePixelShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.pixShader);
+						break;
+					case FX_GEOMPROG:
+						hr = pd3d1X->CreateGeometryShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						#ifdef USE_D3D11
+						NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						#endif
+						&curShaderData.gsShader);
+						break;
+					case FX_TCSPROG:
+						//#ifdef USE_D3D11
+						//hr = pd3d1X->CreateHullShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						//NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						//&curShaderData.hullShader);
+						//#else
+						assert(1);
+						//#endif
+					case FX_TESPROG:
+						//#ifdef USE_D3D11
+						//hr = pd3d1X->CreateDomainShader(curShaderData.compiledShader->GetBufferPointer(), curShaderData.compiledShader->GetBufferSize(), 
+						//NULL, // This is ID3D11ClassLinkage pointer. TODO: see how to use it later.
+						//&curShaderData.evalShader);
+						//#else
+						assert(1);
+						//#endif
+					}
+#endif
 					if(FAILED(hr))
 					{
 						err = true;
