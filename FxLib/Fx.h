@@ -458,7 +458,7 @@ protected:
     BufferHandle m_backbuffer; ///< keep track of the backbuffer reference (FBO or D3D interface...)
     BufferHandle m_backbufferDST; ///< keep track of the backbuffer reference (D3D interface DST...)
 #ifdef WIN32
-    void*       m_pDevice; // typically needed for D3D case
+    const void *  m_pDevice; // typically needed for D3D case
 #endif
     //BaseOwner*  m_pOwner;
     struct Fbo {
@@ -499,7 +499,12 @@ public:
     //bool        setDrawBuffers(IFrameBufferObject* pFBO);
 
 #ifdef WIN32
-    const void*          getDevice() { return m_pDevice; }
+    const void*          getRepoDevice()
+	{
+		if (m_pDevice == 0)
+			m_pDevice = getDevice();
+		return m_pDevice;
+	}
 #endif
     BufferHandle getBackBuffer() { return m_backbuffer; }
     BufferHandle getBackBufferDST() { return m_backbufferDST; }
@@ -592,7 +597,7 @@ protected:
     int         m_msaa[2]; ///< keep track of the application msaa mode
     BufferHandle m_backbuffer; ///< keep track of the backbuffer reference (FBO or D3D interface...)
     BufferHandle m_backbufferDST; ///< keep track of the backbuffer reference (FBO or D3D interface...)
-    void* 	     m_pDevice; // typically needed for D3D case
+    const void*  m_pDevice; // typically needed for D3D case
     //BaseOwner*				m_pOwner;
     struct Res {
         Res(Resource* p_=NULL, int refCnt_=0) : p(p_), refCnt(refCnt_) {}
@@ -636,7 +641,14 @@ public:
     bool                removeResource(Resource *p);
     const int *          getViewport() { return m_vp; }
     const int *          getMsaa() { return m_msaa; }
-    const void*          getDevice() { return m_pDevice; }
+#ifdef WIN32
+	const void*          getRepoDevice()
+	{
+		if (m_pDevice == 0)
+			m_pDevice = getDevice();
+		return m_pDevice;
+	}
+#endif
 
     //friend class Resource;
 };

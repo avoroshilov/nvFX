@@ -994,12 +994,12 @@ void Shader::releaseMe()
  ** 
  ** 
  **/ /*************************************************************************/ 
-static const void*         g_device; // device. For DX... see how to do better
-void        nvFX::setDevice(const void *p)
+static void*         g_device; // device. For DX... see how to do better
+void        nvFX::setDevice(void *p)
 {
     g_device = p;
 }
-const void* nvFX::getDevice()
+void* nvFX::getDevice()
 {
     return g_device;
 }

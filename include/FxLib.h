@@ -1505,9 +1505,9 @@ ICstBufferRepository* getCstBufferRepositorySingleton();
 // NOTE: this was in the container. needed for D3D case.
 // TODO: See what is the best solution to access the device interface... how shall we store this device of Uniform/cstbuffers ?
 /// \brief associate a Device pointer. Essentially used for DirectX case (OpenGL does use current context)
-void                setDevice(const void *p);
+void                setDevice(void *p);
 /// \brief returns the associated Device pointer. Essentially used for DirectX case (OpenGL does use current context)
-const void*         getDevice();
+void*         getDevice();
 
 }//namespace nvFX
 #endif //__FXLIB_H__
