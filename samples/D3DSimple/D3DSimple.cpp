@@ -86,6 +86,7 @@ bool initFx()
 	nvFX::setErrorCallback(nvFXErrorMsg);
 	nvFX::setMessageCallback(nvFXMsg);
 
+	nvFX::setDevice(g_d3dDevice);
 	fx_EffectScene = nvFX::IContainer::create();
 
 #if 0
