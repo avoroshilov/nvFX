@@ -600,22 +600,51 @@ bool FrameBufferObjectsRepository::setCurrent(IFrameBufferObject* pFBO, bool bAd
 {
     if(pFBO == NULL)
     {
-        ID3D10Device* pd3dDevice = (ID3D10Device*)m_pDevice;
-        ID3D10RenderTargetView* pRTV  = static_cast<ID3D10RenderTargetView*>(m_backbuffer);
-        ID3D10DepthStencilView* pDSTV = static_cast<ID3D10DepthStencilView*>(m_backbufferDST);
-        pd3dDevice->OMSetRenderTargets(1, &pRTV, pDSTV);
-        if(bAdjustViewport)
-        {
-            D3D10_VIEWPORT vp;
-            vp.TopLeftX = m_vp[0];
-            vp.TopLeftY = m_vp[1];
-            vp.Width = m_vp[2];
-            vp.Height = m_vp[3];
-    #pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
-            vp.MinDepth = 0.0f; // TODO
-            vp.MaxDepth = 1.0f; // TODO
-            pd3dDevice->RSSetViewports(1, &vp);
-        }
+#ifdef USE_D3D11
+		ID3D11Device* pd3dDevice = (ID3D11Device*)getRepoDevice();//m_pDevice;
+		ID3D11DeviceContext* pd3dContext = (ID3D11DeviceContext*)getImmediateContext();//m_pDevice;
+		ID3D11RenderTargetView* pRTV  = static_cast<ID3D11RenderTargetView*>(m_backbuffer);
+		if (pRTV == 0)
+		{
+			pRTV = (ID3D11RenderTargetView*)getDefaultBackBuffer();
+		}
+		ID3D11DepthStencilView* pDSTV = static_cast<ID3D11DepthStencilView*>(m_backbufferDST);
+		pd3dContext->OMSetRenderTargets(1, &pRTV, pDSTV);
+		if(bAdjustViewport)
+		{
+			D3D11_VIEWPORT vp;
+			vp.TopLeftX = m_vp[0];
+			vp.TopLeftY = m_vp[1];
+			vp.Width = m_vp[2];
+			vp.Height = m_vp[3];
+#pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
+			vp.MinDepth = 0.0f; // TODO
+			vp.MaxDepth = 1.0f; // TODO
+			pd3dContext->RSSetViewports(1, &vp);
+		}
+#else
+		// TODO avoroshilov: remove this code path and make D3D10 obsolete
+		ID3D10Device* pd3dDevice = (ID3D10Device*)getRepoDevice();//m_pDevice;
+		ID3D10RenderTargetView* pRTV  = static_cast<ID3D10RenderTargetView*>(m_backbuffer);
+		if (pRTV == 0)
+		{
+			pRTV = (ID3D10RenderTargetView*)getDefaultBackBuffer();
+		}
+		ID3D10DepthStencilView* pDSTV = static_cast<ID3D10DepthStencilView*>(m_backbufferDST);
+		pd3dDevice->OMSetRenderTargets(1, &pRTV, pDSTV);
+		if(bAdjustViewport)
+		{
+			D3D10_VIEWPORT vp;
+			vp.TopLeftX = m_vp[0];
+			vp.TopLeftY = m_vp[1];
+			vp.Width = m_vp[2];
+			vp.Height = m_vp[3];
+#pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
+			vp.MinDepth = 0.0f; // TODO
+			vp.MaxDepth = 1.0f; // TODO
+			pd3dDevice->RSSetViewports(1, &vp);
+		}
+#endif
         return true;
     }
     bool bRes = static_cast<FrameBufferObject*>(pFBO)->setCurrent(bAdjustViewport);

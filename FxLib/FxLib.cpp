@@ -1004,3 +1004,24 @@ void* nvFX::getDevice()
     return g_device;
 }
 
+static const void*         g_defaultBackBuf; // default back buffer. For DX... see how to do better
+void        nvFX::setDefaultBackBuffer(const void *p)
+{
+	g_defaultBackBuf = p;
+}
+const void* nvFX::getDefaultBackBuffer()
+{
+	return g_defaultBackBuf;
+}
+
+static void*         g_immediateContext; // default back buffer. For DX... see how to do better
+void        nvFX::setImmediateContext(void *p)
+{
+	g_immediateContext = p;
+}
+void* nvFX::getImmediateContext()
+{
+	return g_immediateContext;
+}
+
+

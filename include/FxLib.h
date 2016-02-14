@@ -1508,6 +1508,14 @@ ICstBufferRepository* getCstBufferRepositorySingleton();
 void                setDevice(void *p);
 /// \brief returns the associated Device pointer. Essentially used for DirectX case (OpenGL does use current context)
 void*         getDevice();
+/// \brief associate a Default Back Buffer pointer. Essentially used for DirectX case (OpenGL can use current backbuf)
+void                setDefaultBackBuffer(const void *p);
+/// \brief returns the associated Default Back Buffer pointer. Essentially used for DirectX case (OpenGL can use current backbuf)
+const void*         getDefaultBackBuffer();
+/// \brief associate a Immediate Context pointer. Essentially used for DirectX 11 case (D3D10 and OpenGL do not need this)
+void                setImmediateContext(void *p);
+/// \brief returns the associated Immediate Context pointer. Essentially used for DirectX 11 case (D3D10 and OpenGL do not need this)
+void*         getImmediateContext();
 
 }//namespace nvFX
 #endif //__FXLIB_H__
