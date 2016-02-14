@@ -26,8 +26,8 @@ set(HEADERS
 set(SOURCES
   CstBufferD3D.cpp
   D3DShader.cpp
+  D3DProgram.cpp
   FxLibD3D.cpp
-  Program.cpp
   resourcesD3D.cpp
   SamplerStateD3D.cpp
   StateGroupD3D.cpp
