@@ -62,9 +62,37 @@ nvFX::ITechnique *			fx_TechScene			= NULL;
 
 void render()
 {
+#if 1
+
+	nvFX::PassInfo pr;
+	memset(&pr, 0, sizeof(pr));
+
+	if(fx_TechScene)
+	{
+		int np = fx_TechScene->getNumPasses();
+		for(int i=0; i<np; i++)
+		{
+			nvFX::IPass* scenePass = fx_TechScene->getPass(i, &pr);
+			if(!pr.bActive)
+				continue;
+			if(!scenePass->isValidated())
+			{
+				continue;
+			}
+
+			pr.renderingGroup = 0; // set back to 0 before each pass. So no persistent value across passes
+			scenePass->execute(&pr);
+		}
+	}
+
+#else
+
 	const FLOAT blue[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	g_immediateContext->ClearRenderTargetView(g_renderTargetView, blue);
 //	g_immediateContext->Draw(3, 0);
+
+#endif
+
 	g_swapChain->Present(0, 0);
 }
 
@@ -523,13 +551,16 @@ int WINAPI WinMain(    HINSTANCE hInstance,
 			else 
 			{
 				//idle();
-
+#if 0
+				render();
+#else
 				if(g_renderCnt > 0)
 				{
 					g_renderCnt--;
 					render();
 				} else
 					Sleep(10);
+#endif
 			}
 		}
 	}
