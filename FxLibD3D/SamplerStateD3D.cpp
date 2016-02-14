@@ -180,7 +180,7 @@ SamplerState*  SamplerStateD3D::update(void *data, Pass *pass, int layerID, bool
 					for(int i=0; i<(int)sd.BoundResources; i++)
 					{
 						curShaderData.reflector->GetResourceBindingDesc(i, &r);
-						if(r.Type == D3D10_SIT_SAMPLER) // type is still D3D10_SHADER_INPUT_TYPE
+						if(r.Type == D3D1X_SIT_SAMPLER) // type is still D3D_SHADER_INPUT_TYPE
 						{
 							if(!strcmp(r.Name, m_name.c_str()))
 							{

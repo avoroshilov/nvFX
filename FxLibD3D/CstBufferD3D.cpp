@@ -65,10 +65,9 @@ void CstBufferD3D::updateD3D(STarget &t)
             //
             t.bufferIndex = -1;
             ID3D1XShaderReflectionConstantBuffer *pCst = NULL;
-            int i;
             // Because I couldn't use IID_ID3D1XShaderReflection, I used D3D11 instead...
             // TODO: fix this. See D3DShaderProgram::bind()
-            D3D11_SHADER_DESC sd;
+            D3D1X_SHADER_DESC sd;
 
 			D3DShaderProgram::ShaderData * allShaders[] = {
 				&program->m_dataVS,
@@ -83,11 +82,12 @@ void CstBufferD3D::updateD3D(STarget &t)
 
 			// TODO avoroshilov: logic only allow one buffer slot currently, fix this (probably PS will have different slot for the same constant than VS?)
 			//			Target ttype only seem to allow one target, too, check that
-			for (int i = 0, iend = sizeof(allShaders) / sizeof(void *); i < iend; ++i)
+			for (int scnt = 0, scntend = sizeof(allShaders) / sizeof(void *); scnt < scntend; ++scnt)
 			{
-				D3DShaderProgram::ShaderData & curShaderData = *allShaders[i];
+				D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
 
 				curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
+				int i;
 				for(i=0; i<(int)sd.ConstantBuffers; i++)
 				{
 					D3D1X_SHADER_BUFFER_DESC bufDesc;

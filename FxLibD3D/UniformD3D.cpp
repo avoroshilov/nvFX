@@ -159,7 +159,7 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
 					for(i=0; i<(int)sd.BoundResources; i++)
 					{
 						curShaderData.reflector->GetResourceBindingDesc(i, &r);
-						if(r.Type == D3D10_SIT_TEXTURE) // type is still D3D10_SHADER_INPUT_TYPE
+						if(r.Type == D3D1X_SIT_TEXTURE) // type is still D3D_SHADER_INPUT_TYPE
 						{
 							if(!strcmp(r.Name, m_name.c_str()))
 								break;

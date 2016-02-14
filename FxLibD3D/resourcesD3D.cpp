@@ -48,7 +48,7 @@ bool ResourceD3D::setD3DResourceView(void *p)
 {
     if(m_ptr) // we can't assign an external resource view if it was create from ResourceD3D
         return false;
-    else m_pTextureView = (ID3D10ShaderResourceView*)p;
+    else m_pTextureView = (ID3D1XShaderResourceView*)p;
     return true;
 }
 void* ResourceD3D::getD3DResourceView()
@@ -72,7 +72,7 @@ ResourceD3D::~ResourceD3D()
  **/ /*************************************************************************/ 
 bool ResourceD3D::createRenderResource()
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
+    ID3D1XDevice* pd3dDevice = (ID3D1XDevice*)m_pOwner->getRepoDevice();
     if(m_creationData.appDepSz)
     {
         const int* vp = m_pOwner->getViewport();
@@ -99,7 +99,7 @@ bool ResourceD3D::createRenderResource()
     //case FMT_INTENSITY16F:      m_d3dFmt = ; break;
     case FMT_INTENSITY32F:
         m_d3dFmt = DXGI_FORMAT_R32_FLOAT;
-        bindFlags = D3D10_BIND_SHADER_RESOURCE|D3D10_BIND_RENDER_TARGET;
+        bindFlags = D3D1X_BIND_SHADER_RESOURCE|D3D1X_BIND_RENDER_TARGET;
         break;
 
     //case FMT_LUMINANCE_ALPHA:
@@ -121,7 +121,7 @@ bool ResourceD3D::createRenderResource()
     //case FMT_RGBA:
     case FMT_RGBA8:             
         m_d3dFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
-        bindFlags = D3D10_BIND_SHADER_RESOURCE|D3D10_BIND_RENDER_TARGET;
+        bindFlags = D3D1X_BIND_SHADER_RESOURCE|D3D1X_BIND_RENDER_TARGET;
         break;
     //case FMT_RGBA8UI:           m_d3dFmt = ;        break;
     //case FMT_RGBA16F:           m_d3dFmt = ;        break;
@@ -129,12 +129,12 @@ bool ResourceD3D::createRenderResource()
 
     case FMT_DEPTH24STENCIL8:   
         m_d3dFmt = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        bindFlags = /*D3D10_BIND_SHADER_RESOURCE|*/D3D10_BIND_DEPTH_STENCIL;
+        bindFlags = /*D3D1X_BIND_SHADER_RESOURCE|*/D3D1X_BIND_DEPTH_STENCIL;
         break;
     //case FMT_DEPTH_COMPONENT32F:m_d3dFmt = 
     case FMT_DEPTH32F_STENCIL8: 
         m_d3dFmt = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-        bindFlags = /*D3D10_BIND_SHADER_RESOURCE|*/D3D10_BIND_DEPTH_STENCIL;
+        bindFlags = /*D3D1X_BIND_SHADER_RESOURCE|*/D3D1X_BIND_DEPTH_STENCIL;
         break;
     }
     switch(m_type)
@@ -173,7 +173,7 @@ bool ResourceD3D::createRenderResource()
         }
         else
         {
-            D3D10_TEXTURE2D_DESC    rtTexDesc;
+            D3D1X_TEXTURE2D_DESC    rtTexDesc;
             rtTexDesc.Width         = width;
             rtTexDesc.Height        = height;
             rtTexDesc.MipLevels     = 1;
@@ -181,7 +181,7 @@ bool ResourceD3D::createRenderResource()
             rtTexDesc.Format        = m_d3dFmt;
             rtTexDesc.SampleDesc.Count = m_creationData.msaa[0] > 0 ? m_creationData.msaa[0] : 1;
             rtTexDesc.SampleDesc.Quality = m_creationData.msaa[1];
-            rtTexDesc.Usage         = D3D10_USAGE_DEFAULT;
+            rtTexDesc.Usage         = D3D1X_USAGE_DEFAULT;
             rtTexDesc.BindFlags     = bindFlags;
             rtTexDesc.CPUAccessFlags = 0;
             rtTexDesc.MiscFlags     = 0;
@@ -193,11 +193,11 @@ bool ResourceD3D::createRenderResource()
             //
             // Create the resource View now since we know this resource is meant to be used as a texture in shaders for most of the cases
             //
-            if(bindFlags & D3D10_BIND_SHADER_RESOURCE)
+            if(bindFlags & D3D1X_BIND_SHADER_RESOURCE)
             {
-                D3D10_SHADER_RESOURCE_VIEW_DESC viewDesc;
+                D3D1X_SHADER_RESOURCE_VIEW_DESC viewDesc;
                 viewDesc.Format = m_d3dFmt;
-                viewDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+                viewDesc.ViewDimension = D3D1X_SRV_DIMENSION_TEXTURE2D;
                 viewDesc.Texture2D.MostDetailedMip = 0;
                 viewDesc.Texture2D.MipLevels = 1;
                 //SAFE_RELEASE(g_pRTViewDepth);
@@ -312,7 +312,7 @@ FrameBufferObject::~FrameBufferObject()
 
 bool FrameBufferObject::validate()
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
+    ID3D1XDevice* pd3dDevice = (ID3D1XDevice*)m_pOwner->getRepoDevice();
     bool validated = (m_colors.size() > 0) || (m_dst) ? true : false;
     // run through resources and see if we created the RTViews or if sizes changed
     for(int i=0; i<(int)m_colors.size(); i++)
@@ -473,17 +473,22 @@ bool FrameBufferObject::validate()
  **/ /*************************************************************************/ 
 bool FrameBufferObject::setCurrent(bool bAdjustViewport)
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
-    ID3D10RenderTargetView *pRTs[4];
+#ifdef USE_D3D11
+	ID3D11DeviceContext *pd3d1X;
+	((ID3D1XDevice *)nvFX::getDevice())->GetImmediateContext(&pd3d1X);
+#else
+	ID3D1XDevice *pd3d1X = (ID3D1XDevice *)nvFX::getDevice();
+#endif
+	ID3D1XRenderTargetView *pRTs[4];
     for(int i=0; i<(int)m_colors.size(); i++)
     {
         pRTs[i] = static_cast<ResourceD3D*>(m_colors[i])->m_pTextureRTView;
     }
-    ID3D10DepthStencilView* pDSTView = static_cast<ResourceD3D*>(m_dst)->m_pTextureDSTView;
-    pd3dDevice->OMSetRenderTargets((int)m_colors.size(), pRTs, pDSTView);
+    ID3D1XDepthStencilView* pDSTView = static_cast<ResourceD3D*>(m_dst)->m_pTextureDSTView;
+	pd3d1X->OMSetRenderTargets((int)m_colors.size(), pRTs, pDSTView);
     if(bAdjustViewport)
     {
-        D3D10_VIEWPORT vp;
+        D3D1X_VIEWPORT vp;
         vp.TopLeftX = 0;
         vp.TopLeftY = 0;
         vp.Width = m_w;
@@ -491,7 +496,7 @@ bool FrameBufferObject::setCurrent(bool bAdjustViewport)
 #pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
         vp.MinDepth = 0.0f; // TODO
         vp.MaxDepth = 1.0f; // TODO
-        pd3dDevice->RSSetViewports(1, &vp);
+		pd3d1X->RSSetViewports(1, &vp);
     }
     return true;
 }
@@ -501,7 +506,13 @@ bool FrameBufferObject::setCurrent(bool bAdjustViewport)
  **/ /*************************************************************************/ 
 bool FrameBufferObject::blitTo(IFrameBufferObject* pIDst)
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)m_pOwner->getRepoDevice();
+#ifdef USE_D3D11
+	ID3D11DeviceContext *pd3d1X;
+	((ID3D1XDevice *)nvFX::getDevice())->GetImmediateContext(&pd3d1X);
+#else
+	ID3D1XDevice *pd3d1X = (ID3D1XDevice *)nvFX::getDevice();
+#endif
+    ID3D1XDevice* pd3dDevice = (ID3D1XDevice*)m_pOwner->getRepoDevice();
     FrameBufferObject* pDst = static_cast<FrameBufferObject*>(pIDst);
     int n = pDst->m_colors.size();
     if((int)m_colors.size() < n)
@@ -510,19 +521,26 @@ bool FrameBufferObject::blitTo(IFrameBufferObject* pIDst)
     {
         ResourceD3D* pDstD3D = static_cast<ResourceD3D*>(pDst->m_colors[i]);
         ResourceD3D* pSrcD3D = static_cast<ResourceD3D*>(m_colors[i]);
-        pd3dDevice->CopyResource(pDstD3D->m_pTexture2D, pSrcD3D->m_pTexture2D);
+		pd3d1X->CopyResource(pDstD3D->m_pTexture2D, pSrcD3D->m_pTexture2D);
     }
     if(m_dst && pDst->m_dst)
     {
         ResourceD3D* pDstD3D = static_cast<ResourceD3D*>(pDst->m_dst);
         ResourceD3D* pSrcD3D = static_cast<ResourceD3D*>(m_dst);
-        pd3dDevice->CopyResource(pDstD3D->m_pTexture2D, pSrcD3D->m_pTexture2D);
+		pd3d1X->CopyResource(pDstD3D->m_pTexture2D, pSrcD3D->m_pTexture2D);
     }
     return true;
 }
 bool      FrameBufferObjectsRepository::blit(IFrameBufferObject* pIDst, IFrameBufferObject* pISrc)
 {
-    ID3D10Device* pd3dDevice = (ID3D10Device*)getDevice();
+    ID3D1XDevice* pd3dDevice = (ID3D1XDevice*)getDevice();
+#ifdef USE_D3D11
+	ID3D11DeviceContext *pd3d1X;
+	pd3dDevice->GetImmediateContext(&pd3d1X);
+#else
+	ID3D1XDevice *pd3d1X = pd3dDevice;
+#endif
+
     FrameBufferObject* pDst = pIDst ? static_cast<FrameBufferObject*>(pIDst) : NULL;
     FrameBufferObject* pSrc = pISrc ? static_cast<FrameBufferObject*>(pISrc) : NULL;
     if(pDst != pSrc)
@@ -544,10 +562,10 @@ bool      FrameBufferObjectsRepository::blit(IFrameBufferObject* pIDst, IFrameBu
         int n = pDst ? (int)pDst->m_colors.size() : 1;
         if(pSrc && ((int)pSrc->m_colors.size() < n))
             n = (int)pSrc->m_colors.size();
-        ID3D10Resource *pBackBuffer;
-        ID3D10Resource *pBackBufferDST;
-        static_cast<ID3D10RenderTargetView*>(m_backbuffer)->GetResource(&pBackBuffer);
-        static_cast<ID3D10DepthStencilView*>(m_backbufferDST)->GetResource(&pBackBufferDST);
+        ID3D1XResource *pBackBuffer;
+        ID3D1XResource *pBackBufferDST;
+        static_cast<ID3D1XRenderTargetView*>(m_backbuffer)->GetResource(&pBackBuffer);
+        static_cast<ID3D1XDepthStencilView*>(m_backbufferDST)->GetResource(&pBackBufferDST);
         for(int i=0; i<n; i++)
         {
             ResourceD3D* pDstD3D = NULL;
@@ -558,9 +576,9 @@ bool      FrameBufferObjectsRepository::blit(IFrameBufferObject* pIDst, IFrameBu
                 pSrcD3D = static_cast<ResourceD3D*>(pSrc->m_colors[i]);
             // TODO: ResolveSubresource
             if(pSrcD3D)
-                pd3dDevice->ResolveSubresource(pBackBuffer, 0, pSrcD3D->m_pTexture2D, 0, pSrcD3D->m_d3dFmt); // CopyResource(pBackBuffer, pSrcD3D->m_pTexture2D);
+				pd3d1X->ResolveSubresource(pBackBuffer, 0, pSrcD3D->m_pTexture2D, 0, pSrcD3D->m_d3dFmt); // CopyResource(pBackBuffer, pSrcD3D->m_pTexture2D);
             else
-                pd3dDevice->ResolveSubresource(pBackBuffer, 0, pSrcD3D->m_pTexture2D, 0, pSrcD3D->m_d3dFmt); // CopyResource(pDstD3D->m_pTexture2D, pBackBuffer);
+				pd3d1X->ResolveSubresource(pBackBuffer, 0, pSrcD3D->m_pTexture2D, 0, pSrcD3D->m_d3dFmt); // CopyResource(pDstD3D->m_pTexture2D, pBackBuffer);
         }
         //{
         //    ResourceD3D* pDstD3D = NULL;
@@ -601,40 +619,22 @@ bool FrameBufferObjectsRepository::setCurrent(IFrameBufferObject* pFBO, bool bAd
     if(pFBO == NULL)
     {
 #ifdef USE_D3D11
-		ID3D11Device* pd3dDevice = (ID3D11Device*)getRepoDevice();//m_pDevice;
-		ID3D11DeviceContext* pd3dContext = (ID3D11DeviceContext*)getImmediateContext();//m_pDevice;
-		ID3D11RenderTargetView* pRTV  = static_cast<ID3D11RenderTargetView*>(m_backbuffer);
-		if (pRTV == 0)
-		{
-			pRTV = (ID3D11RenderTargetView*)getDefaultBackBuffer();
-		}
-		ID3D11DepthStencilView* pDSTV = static_cast<ID3D11DepthStencilView*>(m_backbufferDST);
-		pd3dContext->OMSetRenderTargets(1, &pRTV, pDSTV);
-		if(bAdjustViewport)
-		{
-			D3D11_VIEWPORT vp;
-			vp.TopLeftX = m_vp[0];
-			vp.TopLeftY = m_vp[1];
-			vp.Width = m_vp[2];
-			vp.Height = m_vp[3];
-#pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
-			vp.MinDepth = 0.0f; // TODO
-			vp.MaxDepth = 1.0f; // TODO
-			pd3dContext->RSSetViewports(1, &vp);
-		}
+		ID3D11DeviceContext *pd3d1X;
+		((ID3D1XDevice *)nvFX::getDevice())->GetImmediateContext(&pd3d1X);
 #else
-		// TODO avoroshilov: remove this code path and make D3D10 obsolete
-		ID3D10Device* pd3dDevice = (ID3D10Device*)getRepoDevice();//m_pDevice;
-		ID3D10RenderTargetView* pRTV  = static_cast<ID3D10RenderTargetView*>(m_backbuffer);
+		ID3D1XDevice *pd3d1X = (ID3D1XDevice *)nvFX::getDevice();
+#endif
+
+		ID3D1XRenderTargetView* pRTV  = static_cast<ID3D1XRenderTargetView*>(m_backbuffer);
 		if (pRTV == 0)
 		{
-			pRTV = (ID3D10RenderTargetView*)getDefaultBackBuffer();
+			pRTV = (ID3D1XRenderTargetView*)getDefaultBackBuffer();
 		}
-		ID3D10DepthStencilView* pDSTV = static_cast<ID3D10DepthStencilView*>(m_backbufferDST);
-		pd3dDevice->OMSetRenderTargets(1, &pRTV, pDSTV);
+		ID3D1XDepthStencilView* pDSTV = static_cast<ID3D1XDepthStencilView*>(m_backbufferDST);
+		pd3d1X->OMSetRenderTargets(1, &pRTV, pDSTV);
 		if(bAdjustViewport)
 		{
-			D3D10_VIEWPORT vp;
+			D3D1X_VIEWPORT vp;
 			vp.TopLeftX = m_vp[0];
 			vp.TopLeftY = m_vp[1];
 			vp.Width = m_vp[2];
@@ -642,9 +642,9 @@ bool FrameBufferObjectsRepository::setCurrent(IFrameBufferObject* pFBO, bool bAd
 #pragma MESSAGE(__FILE__ "(572) : FrameBufferObject::setCurrent() : take care of the depth viewport info, too")
 			vp.MinDepth = 0.0f; // TODO
 			vp.MaxDepth = 1.0f; // TODO
-			pd3dDevice->RSSetViewports(1, &vp);
+			pd3d1X->RSSetViewports(1, &vp);
 		}
-#endif
+
         return true;
     }
     bool bRes = static_cast<FrameBufferObject*>(pFBO)->setCurrent(bAdjustViewport);

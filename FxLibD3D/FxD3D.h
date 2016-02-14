@@ -41,6 +41,7 @@
 #define USE_D3D11
 
 #include "FxLib.h"
+
 #ifdef USE_D3D11
 #include <dxgi.h>
 #include <d3d11.h>
@@ -85,6 +86,27 @@ typedef D3D11_SHADER_VARIABLE_DESC              D3D1X_SHADER_VARIABLE_DESC;
 typedef D3D11_SIGNATURE_PARAMETER_DESC          D3D1X_SIGNATURE_PARAMETER_DESC;
 typedef D3D11_SHADER_INPUT_BIND_DESC            D3D1X_SHADER_INPUT_BIND_DESC;
 typedef D3D11_TEXTURE_ADDRESS_MODE              D3D1X_TEXTURE_ADDRESS_MODE;
+
+typedef D3D11_INPUT_ELEMENT_DESC				D3D1X_INPUT_ELEMENT_DESC;
+typedef ID3D11InputLayout						ID3D1XInputLayout;
+typedef ID3D11RenderTargetView					ID3D1XRenderTargetView;
+typedef ID3D11DepthStencilView					ID3D1XDepthStencilView;
+typedef D3D11_VIEWPORT							D3D1X_VIEWPORT;
+typedef D3D11_TEXTURE2D_DESC					D3D1X_TEXTURE2D_DESC;
+typedef D3D11_SHADER_RESOURCE_VIEW_DESC			D3D1X_SHADER_RESOURCE_VIEW_DESC;
+typedef ID3D11Resource							ID3D1XResource;
+
+#define D3D1X_INPUT_PER_VERTEX_DATA				D3D11_INPUT_PER_VERTEX_DATA
+#define D3D1X_USAGE_DEFAULT						D3D11_USAGE_DEFAULT
+#define D3D1X_BIND_VERTEX_BUFFER				D3D11_BIND_VERTEX_BUFFER
+#define D3D1X_CLEAR_DEPTH						D3D11_CLEAR_DEPTH
+#define D3D1X_CLEAR_STENCIL						D3D11_CLEAR_STENCIL
+#define D3D1X_BIND_SHADER_RESOURCE				D3D11_BIND_SHADER_RESOURCE
+#define D3D1X_BIND_RENDER_TARGET				D3D11_BIND_RENDER_TARGET
+#define D3D1X_BIND_DEPTH_STENCIL				D3D11_BIND_DEPTH_STENCIL
+#define D3D1X_SRV_DIMENSION_TEXTURE2D			D3D11_SRV_DIMENSION_TEXTURE2D
+#define D3D1X_SIT_SAMPLER						D3D_SIT_SAMPLER
+#define D3D1X_SIT_TEXTURE						D3D_SIT_TEXTURE
 
 #define D3DX1XCompileFromMemory D3DX11CompileFromMemory
 #define D3D1X(a) D3D11_##a
@@ -133,6 +155,27 @@ typedef D3D10_SHADER_VARIABLE_DESC              D3D1X_SHADER_VARIABLE_DESC;
 typedef D3D10_SIGNATURE_PARAMETER_DESC          D3D1X_SIGNATURE_PARAMETER_DESC;
 typedef D3D10_SHADER_INPUT_BIND_DESC            D3D1X_SHADER_INPUT_BIND_DESC;
 typedef D3D10_TEXTURE_ADDRESS_MODE              D3D1X_TEXTURE_ADDRESS_MODE;
+
+typedef D3D10_INPUT_ELEMENT_DESC				D3D1X_INPUT_ELEMENT_DESC;
+typedef ID3D10InputLayout						ID3D1XInputLayout;
+typedef ID3D10RenderTargetView					ID3D1XRenderTargetView;
+typedef ID3D10DepthStencilView					ID3D1XDepthStencilView;
+typedef D3D10_VIEWPORT							D3D1X_VIEWPORT;
+typedef D3D10_TEXTURE2D_DESC					D3D1X_TEXTURE2D_DESC;
+typedef D3D10_SHADER_RESOURCE_VIEW_DESC			D3D1X_SHADER_RESOURCE_VIEW_DESC;
+typedef ID3D10Resource							ID3D1XResource;
+
+#define D3D1X_INPUT_PER_VERTEX_DATA				D3D10_INPUT_PER_VERTEX_DATA
+#define D3D1X_USAGE_DEFAULT						D3D10_USAGE_DEFAULT
+#define D3D1X_BIND_VERTEX_BUFFER				D3D10_BIND_VERTEX_BUFFER
+#define D3D1X_CLEAR_DEPTH						D3D10_CLEAR_DEPTH
+#define D3D1X_CLEAR_STENCIL						D3D10_CLEAR_STENCIL
+#define D3D1X_BIND_SHADER_RESOURCE				D3D10_BIND_SHADER_RESOURCE
+#define D3D1X_BIND_RENDER_TARGET				D3D10_BIND_RENDER_TARGET
+#define D3D1X_BIND_DEPTH_STENCIL				D3D10_BIND_DEPTH_STENCIL
+#define D3D1X_SRV_DIMENSION_TEXTURE2D			D3D10_SRV_DIMENSION_TEXTURE2D
+#define D3D1X_SIT_SAMPLER						D3D10_SIT_SAMPLER
+#define D3D1X_SIT_TEXTURE						D3D10_SIT_TEXTURE
 
 #define D3DX1XCompileFromMemory D3DX10CompileFromMemory
 #define D3D1X(a) D3D10_##a
@@ -387,15 +430,15 @@ class ResourceD3D : public Resource
 protected:
     DXGI_FORMAT                         m_d3dFmt;
     union {
-        ID3D10Texture1D*                m_pTexture1D;
-        ID3D10Texture2D*                m_pTexture2D;
-        ID3D10Texture3D*                m_pTexture3D;
+        ID3D1XTexture1D*                m_pTexture1D;
+        ID3D1XTexture2D*                m_pTexture2D;
+        ID3D1XTexture3D*                m_pTexture3D;
         void*                           m_ptr;
     };
-    ID3D10ShaderResourceView*           m_pTextureView;
+    ID3D1XShaderResourceView*           m_pTextureView;
     union {
-        ID3D10RenderTargetView*         m_pTextureRTView; ///< used if the resource is part of a 'FBO'
-        ID3D10DepthStencilView*         m_pTextureDSTView; ///< used if the resource is part of a 'FBO'
+        ID3D1XRenderTargetView*         m_pTextureRTView; ///< used if the resource is part of a 'FBO'
+        ID3D1XDepthStencilView*         m_pTextureDSTView; ///< used if the resource is part of a 'FBO'
     };
     bool    createRenderResource();
 public:

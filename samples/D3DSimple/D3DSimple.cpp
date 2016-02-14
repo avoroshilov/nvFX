@@ -87,7 +87,6 @@ bool initFx()
 	nvFX::setMessageCallback(nvFXMsg);
 
 	nvFX::setDevice(g_d3dDevice);
-	nvFX::setImmediateContext(g_immediateContext);
 	nvFX::setDefaultBackBuffer(g_renderTargetView);
 	fx_EffectScene = nvFX::IContainer::create();
 
