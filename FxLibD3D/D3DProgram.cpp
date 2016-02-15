@@ -708,9 +708,17 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
     //
     // Activate the shaders
     //
+
+	// We need to un-set shaders probably to not pollute state, but maybe it is not needed because 'unbind'
+	bool isVS = (m_shaderFlags & FX_VERTEX_SHADER_BIT) != 0;
+	bool isHS = (m_shaderFlags & FX_TESS_CONTROL_SHADER_BIT) != 0;
+	bool isDS = (m_shaderFlags & FX_TESS_EVALUATION_SHADER_BIT) != 0;
+	bool isGS = (m_shaderFlags & FX_GEOMETRY_SHADER_BIT) != 0;
+	bool isPS = (m_shaderFlags & FX_FRAGMENT_SHADER_BIT) != 0;
+
 #ifdef USE_D3D11
     // TODO: see how to take advantage of ID3D11ClassInstance * argument !
-#if 0
+#	if 0
     switch(m_shaderFlags)
     {
     case FX_VERTEX_SHADER_BIT:
@@ -731,33 +739,32 @@ bool D3DShaderProgram::bind(IContainer* pContainer)
     default:
         assert(1);
     }
-#else
-	// We need to un-set shaders probably to not pollute state, but maybe it is not needed because 'unbind'
-	bool isVS = (m_shaderFlags & FX_VERTEX_SHADER_BIT) != 0;
-	bool isHS = (m_shaderFlags & FX_TESS_CONTROL_SHADER_BIT) != 0;
-	bool isDS = (m_shaderFlags & FX_TESS_EVALUATION_SHADER_BIT) != 0;
-	bool isGS = (m_shaderFlags & FX_GEOMETRY_SHADER_BIT) != 0;
-	bool isPS = (m_shaderFlags & FX_FRAGMENT_SHADER_BIT) != 0;
-
+#	else
 	pd3dDC->VSSetShader(isVS ? m_dataVS.vtxShader : NULL, NULL, 0);
 	pd3dDC->GSSetShader(isGS ? m_dataGS.gsShader : NULL, NULL, 0);
 	pd3dDC->PSSetShader(isPS ? m_dataPS.pixShader : NULL, NULL, 0);
-#endif
+#	endif
 #else
-    switch(m_shaderFlags)
-    {
-    case FX_VERTEX_SHADER_BIT:
-        pd3d1X->VSSetShader(m_data.vtxShader);
-        break;
-    case FX_FRAGMENT_SHADER_BIT:
-        pd3d1X->PSSetShader(m_data.pixShader);
-        break;
-    case FX_GEOMETRY_SHADER_BIT:
-        pd3d1X->GSSetShader(m_data.gsShader);
-        break;
-    default:
-        assert(1);
-    }
+#	if 0
+	switch(m_shaderFlags)
+	{
+	case FX_VERTEX_SHADER_BIT:
+		pd3d1X->VSSetShader(m_data.vtxShader);
+		break;
+	case FX_FRAGMENT_SHADER_BIT:
+		pd3d1X->PSSetShader(m_data.pixShader);
+		break;
+	case FX_GEOMETRY_SHADER_BIT:
+		pd3d1X->GSSetShader(m_data.gsShader);
+		break;
+	default:
+		assert(1);
+	}
+#	else
+	pd3d1X->VSSetShader(isVS ? m_dataVS.vtxShader : NULL);
+	pd3d1X->GSSetShader(isGS ? m_dataGS.gsShader : NULL);
+	pd3d1X->PSSetShader(isPS ? m_dataPS.pixShader : NULL);
+#	endif
 #endif
     return true;
 }
