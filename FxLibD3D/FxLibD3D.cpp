@@ -411,14 +411,14 @@ void Pass::clearRenderTargets(PassInfo *pi)
     switch(pi->clearMode)
     {
     case Clear_depth:
-        ClearFlags = D3D1X_CLEAR_DEPTH;
+        ClearFlags = D3D1X(CLEAR_DEPTH);
         break;
     case Clear_stencil:
-        ClearFlags = D3D1X_CLEAR_STENCIL;
+        ClearFlags = D3D1X(CLEAR_STENCIL);
         break;
     case Clear_all:
     case Clear_depth_stencil:
-        ClearFlags = D3D1X_CLEAR_DEPTH|D3D1X_CLEAR_STENCIL;
+        ClearFlags = D3D1X(CLEAR_DEPTH)|D3D1X(CLEAR_STENCIL);
         break;
     }
     if(ClearFlags == 0)

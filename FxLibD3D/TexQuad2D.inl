@@ -13,8 +13,8 @@ namespace TexQuad2D
     };
     D3D1X_INPUT_ELEMENT_DESC    g_VtxAttribsDesc[] =
     {
-      { "position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D1X_INPUT_PER_VERTEX_DATA, 0 },
-      { "texcoord", 0, DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float)*4, D3D1X_INPUT_PER_VERTEX_DATA, 0 },
+      { "position", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D1X(INPUT_PER_VERTEX_DATA), 0 },
+      { "texcoord", 0, DXGI_FORMAT_R32G32_FLOAT, 0, sizeof(float)*4, D3D1X(INPUT_PER_VERTEX_DATA), 0 },
     };
     ID3D1XInputLayout*          g_InputLayout = NULL;
     ID3D1XBuffer *              g_VtxBufferStatic = NULL;
@@ -73,8 +73,8 @@ namespace TexQuad2D
 		D3D1X_BUFFER_DESC vtxBufferDesc =
 		{
 			sizeof(TexQuad2D::VtxAttribs)*4,
-			D3D1X_USAGE_DEFAULT,
-			D3D1X_BIND_VERTEX_BUFFER,
+			D3D1X(USAGE_DEFAULT),
+			D3D1X(BIND_VERTEX_BUFFER),
 			0,
 			0
 		};
@@ -122,7 +122,7 @@ namespace TexQuad2D
 
 		pd3d1X->IASetInputLayout(TexQuad2D::g_InputLayout);
 		pd3d1X->IASetVertexBuffers(0,1,&TexQuad2D::g_VtxBufferStatic, &strides, &offsets);
-		pd3d1X->IASetPrimitiveTopology(D3D1X_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		pd3d1X->IASetPrimitiveTopology(D3D1X(PRIMITIVE_TOPOLOGY_TRIANGLESTRIP));
 
 		pd3d1X->Draw(4,0);
 
@@ -148,7 +148,7 @@ namespace TexQuad2D
 
 	  pd3d1X->IASetInputLayout(TexQuad2D::g_InputLayout);
 	  pd3d1X->IASetVertexBuffers(0,1,&TexQuad2D::g_VtxBufferStatic, &strides, &offsets);
-	  pd3d1X->IASetPrimitiveTopology(D3D1X_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	  pd3d1X->IASetPrimitiveTopology(D3D1X(PRIMITIVE_TOPOLOGY_TRIANGLESTRIP));
 
 	  pd3d1X->Draw(4,0);
 

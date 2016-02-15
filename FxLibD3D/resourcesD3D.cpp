@@ -99,7 +99,7 @@ bool ResourceD3D::createRenderResource()
     //case FMT_INTENSITY16F:      m_d3dFmt = ; break;
     case FMT_INTENSITY32F:
         m_d3dFmt = DXGI_FORMAT_R32_FLOAT;
-        bindFlags = D3D1X_BIND_SHADER_RESOURCE|D3D1X_BIND_RENDER_TARGET;
+        bindFlags = D3D1X(BIND_SHADER_RESOURCE)|D3D1X(BIND_RENDER_TARGET);
         break;
 
     //case FMT_LUMINANCE_ALPHA:
@@ -121,7 +121,7 @@ bool ResourceD3D::createRenderResource()
     //case FMT_RGBA:
     case FMT_RGBA8:             
         m_d3dFmt = DXGI_FORMAT_R8G8B8A8_UNORM;
-        bindFlags = D3D1X_BIND_SHADER_RESOURCE|D3D1X_BIND_RENDER_TARGET;
+        bindFlags = D3D1X(BIND_SHADER_RESOURCE)|D3D1X(BIND_RENDER_TARGET);
         break;
     //case FMT_RGBA8UI:           m_d3dFmt = ;        break;
     //case FMT_RGBA16F:           m_d3dFmt = ;        break;
@@ -129,12 +129,12 @@ bool ResourceD3D::createRenderResource()
 
     case FMT_DEPTH24STENCIL8:   
         m_d3dFmt = DXGI_FORMAT_D24_UNORM_S8_UINT;
-        bindFlags = /*D3D1X_BIND_SHADER_RESOURCE|*/D3D1X_BIND_DEPTH_STENCIL;
+        bindFlags = /*D3D1X(BIND_SHADER_RESOURCE)|*/D3D1X(BIND_DEPTH_STENCIL);
         break;
     //case FMT_DEPTH_COMPONENT32F:m_d3dFmt = 
     case FMT_DEPTH32F_STENCIL8: 
         m_d3dFmt = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-        bindFlags = /*D3D1X_BIND_SHADER_RESOURCE|*/D3D1X_BIND_DEPTH_STENCIL;
+        bindFlags = /*D3D1X(BIND_SHADER_RESOURCE)|*/D3D1X(BIND_DEPTH_STENCIL);
         break;
     }
     switch(m_type)
@@ -181,7 +181,7 @@ bool ResourceD3D::createRenderResource()
             rtTexDesc.Format        = m_d3dFmt;
             rtTexDesc.SampleDesc.Count = m_creationData.msaa[0] > 0 ? m_creationData.msaa[0] : 1;
             rtTexDesc.SampleDesc.Quality = m_creationData.msaa[1];
-            rtTexDesc.Usage         = D3D1X_USAGE_DEFAULT;
+            rtTexDesc.Usage         = D3D1X(USAGE_DEFAULT);
             rtTexDesc.BindFlags     = bindFlags;
             rtTexDesc.CPUAccessFlags = 0;
             rtTexDesc.MiscFlags     = 0;
@@ -193,11 +193,11 @@ bool ResourceD3D::createRenderResource()
             //
             // Create the resource View now since we know this resource is meant to be used as a texture in shaders for most of the cases
             //
-            if(bindFlags & D3D1X_BIND_SHADER_RESOURCE)
+            if(bindFlags & D3D1X(BIND_SHADER_RESOURCE))
             {
                 D3D1X_SHADER_RESOURCE_VIEW_DESC viewDesc;
                 viewDesc.Format = m_d3dFmt;
-                viewDesc.ViewDimension = D3D1X_SRV_DIMENSION_TEXTURE2D;
+                viewDesc.ViewDimension = D3D1X(SRV_DIMENSION_TEXTURE2D);
                 viewDesc.Texture2D.MostDetailedMip = 0;
                 viewDesc.Texture2D.MipLevels = 1;
                 //SAFE_RELEASE(g_pRTViewDepth);
