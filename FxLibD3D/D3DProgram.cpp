@@ -94,8 +94,10 @@ D3DShaderProgram::D3DShaderProgram(Container *pCont) : Program(pCont)
 		allShaders[scnt]->reflector = NULL;
 		allShaders[scnt]->shader = NULL;
 	}
+	// TODO avoroshilov: check if there are traces of separate D3D shaders
+	//		since now nvFXD3D supports GL-like programs
     // D3D is always separate
-    pCont->separateShadersEnable(true);
+    //pCont->separateShadersEnable(true);
 }
 /*************************************************************************/ /**
  ** 
