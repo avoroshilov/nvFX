@@ -479,6 +479,9 @@ LRESULT CALLBACK WindowProc( HWND   g_hWnd,
 		case VK_SHIFT:
 			g_bShift = true;
 			break;
+		case VK_ESCAPE:
+			PostQuitMessage(0);
+			break;
 		default:
 			//keyboard_(wParam, g_curX, g_curY);
 			break;
