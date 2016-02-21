@@ -98,7 +98,24 @@ void CstBufferD3D::updateD3D(STarget &t)
 						pCst = curShaderData.reflector->GetConstantBufferByIndex(i);
 						pCst->GetDesc(&bufDesc);
 						if(m_name == std::string(bufDesc.Name))
-							break;
+						{
+							// There is a chance same target was already defined but for different kind of shader within the program
+							bool matchFound = false;
+							for (size_t tgtcnt = 0, tgtcntend = m_targets.size(); tgtcnt < tgtcntend; ++tgtcnt)
+							{
+								STarget & tgt = m_targets[tgtcnt];
+								if (
+									tgt.pass == t.pass && tgt.passLayerId == t.passLayerId && tgt.shaderProgramNumber == t.shaderProgramNumber
+									&& tgt.ttype == ShaderType2Type(allShaderTypes[scnt])
+									)
+								{
+									matchFound = true;
+									break;
+								}
+							}
+							if (!matchFound)
+								break;
+						}
 						pCst = NULL;
 					}
 					if(pCst)
@@ -210,15 +227,17 @@ CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bCreateIfNeeded
             t.valid = false;
             t.pass = pass;
             t.passLayerId = layerID;
-            t.ttype = ShaderFlags2Type(program->getProgramShaderFlags());
+            t.ttype = TANY;//ShaderFlags2Type(program->getProgramShaderFlags());
             t.shaderProgramNumber = p-1; // we store the shader program number : corresponding to a separable vertex shader, frag. shader or other...
             updateD3D(t);
             // add this target only if it is needed
+			bool targetCreated = false;
             if(t.valid)
             {
                 // NOTE: maybe we should use a std::map<pass,target> for targets...
                 int i = 0;
                 for(i=0; i<(int)m_targets.size(); i++)
+				{
                     if((m_targets[i].pass == pass) 
                     && (m_targets[i].ttype == t.ttype)
                     && (m_targets[i].passLayerId == t.passLayerId)
@@ -227,8 +246,10 @@ CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bCreateIfNeeded
                         m_targets[i] = t;
                         break;
                     }
+				}
                 if(i == m_targets.size())
                 {
+					targetCreated = true;
                     m_targets.push_back(t);
                     pass->addCstBuffer(this, i);
                 }
@@ -236,10 +257,13 @@ CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bCreateIfNeeded
             //
             // Move to the next program is available
             //
-            if(programPipeline)
-                program = static_cast<D3DShaderProgram*>(programPipeline->getShaderProgram(p++));
-            else
-                program = NULL;
+			if (!targetCreated)	// If target waqs created - we loop through the same program once again, since another target could emerge
+			{
+				if(programPipeline)
+					program = static_cast<D3DShaderProgram*>(programPipeline->getShaderProgram(p++));
+				else
+					program = NULL;
+			}
         }
 
     }
