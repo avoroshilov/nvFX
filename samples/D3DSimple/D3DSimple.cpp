@@ -27,6 +27,8 @@
 
 #include "FxParser.h"
 
+#include "TimeSampler.h"
+
 HDC         g_hDC       = NULL;
 HGLRC       g_hRC       = NULL;
 HWND        g_hWnd      = NULL;
@@ -39,6 +41,9 @@ int         g_renderCnt = 0;
 
 int g_width = 800;
 int g_height = 600;
+
+TimeSampler g_timer;
+double g_time;
 
 // D3D Objects
 ID3D11Device *				g_d3dDevice				= NULL;
@@ -56,6 +61,8 @@ ID3D11VertexShader *		g_vertexShader			= NULL;
 ID3D11PixelShader *			g_pixelShader			= NULL;
 
 // FX Objects
+nvFX::IUniform *			fx_iGlobalTime			= NULL;
+
 nvFX::IContainer *			fx_EffectScene			= NULL;
 nvFX::ITechnique *			fx_TechScene			= NULL;
 
@@ -64,10 +71,13 @@ void render()
 {
 #if 1
 
+	g_timer.update(true);
+	g_time += g_timer.getTiming();
+
 	nvFX::PassInfo pr;
 	memset(&pr, 0, sizeof(pr));
 
-	if(fx_TechScene)
+	if (fx_TechScene)
 	{
 		int np = fx_TechScene->getNumPasses();
 		for(int i=0; i<np; i++)
@@ -79,6 +89,7 @@ void render()
 			{
 				continue;
 			}
+			fx_iGlobalTime->updateValue1f((float)g_time, scenePass);
 
 			pr.renderingGroup = 0; // set back to 0 before each pass. So no persistent value across passes
 			scenePass->execute(&pr);
@@ -132,6 +143,8 @@ bool initFx()
 	}
 	fx_TechScene = fx_EffectScene->findTechnique(0);
 	fx_TechScene->validate();
+
+	fx_iGlobalTime = fx_EffectScene->findUniform("iGlobalTime");
 
 	return true;
 }
@@ -551,7 +564,7 @@ int WINAPI WinMain(    HINSTANCE hInstance,
 			else 
 			{
 				//idle();
-#if 0
+#if 1
 				render();
 #else
 				if(g_renderCnt > 0)
