@@ -1342,6 +1342,7 @@ IUniform*    Uniform::updateValue1f(float f, IPass *pass)
     Pass* p = static_cast<Pass*>(pass);
     //if(m_data)
     //    setValue1f(f);
+	setDirty(true, NULL);
     update(WILDCAST_AS_SHADOWEDDATA(&f), p, p->getActiveProgramLayer(), false);
     return this;
 }

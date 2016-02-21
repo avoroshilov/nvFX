@@ -86,22 +86,28 @@ void CstBufferD3D::updateD3D(STarget &t)
 			{
 				D3DShaderProgram::ShaderData & curShaderData = *allShaders[scnt];
 
-				curShaderData.reflector->GetDesc((D3D1X_SHADER_DESC*)&sd);
-				int i;
-				for(i=0; i<(int)sd.ConstantBuffers; i++)
+				// TODO avoroshilov: check if shaderData is valid here
+				ID3D1XShaderReflection * curReflection = curShaderData.reflector;
+				if (curReflection)
 				{
-					D3D1X_SHADER_BUFFER_DESC bufDesc;
-					pCst = curShaderData.reflector->GetConstantBufferByIndex(i);
-					pCst->GetDesc(&bufDesc);
-					if(m_name == std::string(bufDesc.Name))
+					curReflection->GetDesc((D3D1X_SHADER_DESC*)&sd);
+					int i;
+					for(i=0; i<(int)sd.ConstantBuffers; i++)
+					{
+						D3D1X_SHADER_BUFFER_DESC bufDesc;
+						pCst = curShaderData.reflector->GetConstantBufferByIndex(i);
+						pCst->GetDesc(&bufDesc);
+						if(m_name == std::string(bufDesc.Name))
+							break;
+						pCst = NULL;
+					}
+					if(pCst)
+					{
+						t.bufferIndex = i;
+						t.valid = true;
+						t.ttype = ShaderType2Type(allShaderTypes[scnt]);
 						break;
-					pCst = NULL;
-				}
-				if(pCst)
-				{
-					t.bufferIndex = i;
-					t.valid = true;
-					break;
+					}
 				}
 			}
             pCst = NULL;
@@ -167,9 +173,11 @@ CstBuffer*    CstBufferD3D::update(Pass *pass, int layerID, bool bCreateIfNeeded
         case THLSL_GS:
         case THLSL_HS:
         case THLSL_DS:
+		case TANY:
             // At execution time, if a Cst Buffer is missing, we take the liberty to create one for you
             if(bCreateBufferIfNeeded && (m_pBufferInterface == NULL))
-                buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
+				buildD3DBuffer(ICstBuffer::D3D_USAGE_DYNAMIC);
+				//buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
             if(pass)
             { // In this case we only update matching pass and return
                 if((t.pass == pass) && (t.passLayerId == layerID))
@@ -250,9 +258,11 @@ CstBuffer* CstBufferD3D::updateForTarget(STarget &t, bool bBindProgram)
     case THLSL_GS:
     case THLSL_HS:
     case THLSL_DS:
-        // At execution time, if a Cst Buffer is missing, we take the liberty to create one for you
+	case TANY:
+		// At execution time, if a Cst Buffer is missing, we take the liberty to create one for you
         if(m_pBufferInterface == NULL)
-            buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
+			buildD3DBuffer(ICstBuffer::D3D_USAGE_DYNAMIC);
+			//buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
         updateD3D(t);
         break;
     case TDXCOMPUTE:
@@ -276,9 +286,11 @@ CstBuffer*    CstBufferD3D::updateForTarget(int target)
 	case THLSL_GS:
 	case THLSL_HS:
 	case THLSL_DS:
+	case TANY:
 		// At execution time, if a Cst Buffer is missing, we take the liberty to create one for you
 		if(m_pBufferInterface == NULL)
-			buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
+			buildD3DBuffer(ICstBuffer::D3D_USAGE_DYNAMIC);
+			//buildD3DBuffer(ICstBuffer::D3D_USAGE_IMMUTABLE);
 		updateD3D(t);
 		break;
 	case TDXCOMPUTE:
@@ -395,6 +407,7 @@ void* CstBufferD3D::buildD3DBuffer(ICstBuffer::BufferUsageD3D usage)
     cbDesc.BindFlags = D3D1X(BIND_CONSTANT_BUFFER);
     cbDesc.CPUAccessFlags = D3D1X(CPU_ACCESS_WRITE);
     cbDesc.MiscFlags = 0;
+	cbDesc.StructureByteStride = 0;
     ID3D1XDevice *pd3d1X = (ID3D1XDevice *)nvFX::getDevice();
     HRESULT hr = pd3d1X->CreateBuffer( &cbDesc, &defaultData, &pBuf);
     free(pTemp);
@@ -426,7 +439,8 @@ ICstBuffer*    CstBufferD3D::setD3DBuffer(void* buffer)
     if(pBuf)
         pBuf->Release();
 
-    CstBuffer::setD3DBuffer(buffer);
+	m_pBufferInterface = buffer;
+    //CstBuffer::setD3DBuffer(buffer);
 
     pBuf = (ID3D1XBuffer*)buffer;
     if(pBuf)

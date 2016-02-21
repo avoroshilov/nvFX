@@ -453,6 +453,19 @@ inline TargetType ShaderFlags2Type(int flag)
     return TANY;
 }
 
+inline TargetType ShaderType2Type(ShaderType type)
+{
+	switch(type)
+	{
+	case FX_VTXPROG:		return THLSL_VTX;
+	case FX_FRAGPROG:		return THLSL_PIX;
+	case FX_GEOMPROG:		return THLSL_GS;
+	case FX_TCSPROG:		return THLSL_HS;
+	case FX_TESPROG:		return THLSL_DS;
+	}
+	return TANY;
+}
+
 /*************************************************************************/ /**
  ** \brief 
  ** 
