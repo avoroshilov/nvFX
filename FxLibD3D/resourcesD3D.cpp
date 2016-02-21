@@ -484,7 +484,9 @@ bool FrameBufferObject::setCurrent(bool bAdjustViewport)
     {
         pRTs[i] = static_cast<ResourceD3D*>(m_colors[i])->m_pTextureRTView;
     }
-    ID3D1XDepthStencilView* pDSTView = static_cast<ResourceD3D*>(m_dst)->m_pTextureDSTView;
+    ID3D1XDepthStencilView* pDSTView = NULL;
+	if (m_dst)
+		pDSTView = static_cast<ResourceD3D*>(m_dst)->m_pTextureDSTView;
 	pd3d1X->OMSetRenderTargets((int)m_colors.size(), pRTs, pDSTView);
     if(bAdjustViewport)
     {
