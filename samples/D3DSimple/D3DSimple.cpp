@@ -443,6 +443,18 @@ void destroyBase()
 {
 }
 
+void reshape(int w, int h)
+{
+	g_width = w; 
+	g_height = h;
+
+	// TODO aovorshilov: see if there is a valid way of passing default backbuf resources
+	nvFX::getResourceRepositorySingleton()->setParams(0,0,w,h,1,0,NULL);
+	bool failed = nvFX::getResourceRepositorySingleton()->updateValidated() ? false : true;
+	if(failed)
+		assert(!"Oops");
+}
+
 LRESULT CALLBACK WindowProc( HWND   g_hWnd, 
 	UINT   msg, 
 	WPARAM wParam, 
@@ -488,7 +500,7 @@ LRESULT CALLBACK WindowProc( HWND   g_hWnd,
 		}
 		break;
 	case WM_SIZE:
-		//reshape(LOWORD(lParam), HIWORD(lParam));
+		reshape(LOWORD(lParam), HIWORD(lParam));
 		break;
 	case WM_CLOSE:
 		PostQuitMessage(0);
