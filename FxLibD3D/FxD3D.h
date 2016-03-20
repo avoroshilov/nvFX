@@ -55,7 +55,7 @@ typedef ID3D11Device            ID3D1XDevice;
 typedef ID3D11RasterizerState   ID3D1XRasterizerState;
 typedef ID3D11BlendState        ID3D1XBlendState;
 typedef ID3D11DepthStencilState ID3D1XDepthStencilState;
-typedef ID3D10Blob              ID3D1XBlob;
+typedef ID3DBlob              ID3D1XBlob;
 typedef ID3D11DeviceChild       ID3D1XDeviceChild;
 typedef ID3D11VertexShader      ID3D1XVertexShader;
 typedef ID3D11GeometryShader    ID3D1XGeometryShader;
