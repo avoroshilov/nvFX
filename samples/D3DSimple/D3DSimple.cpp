@@ -91,6 +91,13 @@ void render()
 			}
 			fx_iGlobalTime->updateValue1f((float)g_time, scenePass);
 
+			//g_d3dDevice->Set
+			void * pNull = NULL;
+			g_immediateContext->VSSetShaderResources(0, 1, (ID3D11ShaderResourceView *const *)&pNull);
+			g_immediateContext->GSSetShaderResources(0, 1, (ID3D11ShaderResourceView *const *)&pNull);
+			g_immediateContext->PSSetShaderResources(0, 1, (ID3D11ShaderResourceView *const *)&pNull);
+			g_immediateContext->OMSetRenderTargets(1, (ID3D11RenderTargetView *const *)&pNull, 0);
+
 			pr.renderingGroup = 0; // set back to 0 before each pass. So no persistent value across passes
 			scenePass->execute(&pr);
 		}
@@ -145,6 +152,11 @@ bool initFx()
 	fx_TechScene->validate();
 
 	fx_iGlobalTime = fx_EffectScene->findUniform("iGlobalTime");
+
+	nvFX::IResourceRepository* pIResRep = nvFX::getResourceRepositorySingleton();
+	pIResRep->setParams(0,0, g_width,g_height, 1, 0, NULL);
+	// update/create every resources that are around. Even if not used:
+	pIResRep->validateAll();
 
 	return true;
 }
