@@ -24,6 +24,18 @@ SamplerState linearSampler
     TEXTURE_MAG_FILTER = LINEAR;
 }
 
+RenderTexture renderTarget0
+{
+	MSAA = {0, 0};
+	Size = ApplicationDefined;
+	Format = RGBA8;
+}
+
+FBO fbo0
+{
+	Color = renderTarget0;
+}
+
 uniform float iGlobalTime;
 
 HLSL10Shader
@@ -95,7 +107,41 @@ HLSL10Shader global fullscreenquadPS
 		else
 			scalar = sin(scalar - (base + range));
 
+		//scalar *= 0.5 + 0.25*cos(iGlobalTime/1.0);
+			
 		return float4( scalar, scalar, scalar, 1.0 );
+	}
+}
+
+HLSL10Shader global fullscreenquadPS_p2
+{
+	Texture2D prevPass;
+	
+	float4 main( VSOut frag ): SV_Target
+	{
+		const float radii[5] = { 0.4, 0.3, 0.2, 0.35, 0.25 };
+
+		float scalar = 0.0;
+		for (int i = 0; i < 2; ++i)
+		{
+			float2 blobCenter = frag.blobCenters[i];
+			scalar += smoothstep(0.0, 1.0, saturate(1.0 - length(frag.texcoord - blobCenter) / radii[i]));
+		}
+	
+#define PI_DIV2 1.57079632679
+		
+		const float base = 0.2, range = 0.2;
+		if (scalar > base && scalar < (base + range))
+			scalar = sin(PI_DIV2 / (range/2.0) * (scalar - base));
+		else if (scalar < base)
+			scalar = 0.0;
+		else
+			scalar = sin(scalar - (base + range));
+
+		scalar *= 0.5 + 0.25*cos(iGlobalTime/0.1);
+			
+		return float4(frag.texcoord.r, frag.texcoord.g, prevPass.Sample(linearSampler, frag.texcoord).b, 1.0);//float4( scalar, scalar, scalar, 1.0 );
+		//return float4( scalar, scalar, scalar, 1.0 );
 	}
 }
 //**************************************************************************************
@@ -112,9 +158,21 @@ Technique Base
     {
         DEPTH_TEST = FALSE;
         renderMode = fullscreen_quad;
-        currentTarget = backbuffer;
+        currentTarget = fbo0;
+        //currentTarget = backbuffer;
         VertexProgram = fullscreenquadVS;
         FragmentProgram = fullscreenquadPS;
         CULL_FACE = false;
     }
+
+    Pass P2
+    {
+        TextureResource(prevPass) = renderTarget0;
+
+        renderMode = fullscreen_quad;
+        currentTarget = backbuffer;
+        VertexProgram = fullscreenquadVS;
+        FragmentProgram = fullscreenquadPS_p2;
+    }
+//*/
 }

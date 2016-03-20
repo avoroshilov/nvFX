@@ -69,6 +69,7 @@ UniformD3D::~UniformD3D()
  *************************************************************************/ 
 void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
 {
+	int shaderNum = -1;
     if(t.pass)
     {
         // Here we take into account either the single-program case, or the separable shader case
@@ -119,6 +120,7 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
 					{
 						t.bufferIndex = i;
 						m_type = Uniform::TCB; // force the type because it obviously is a constant buffer
+						shaderNum = scnt;
 						t.valid = true;
 					}
 				}
@@ -171,6 +173,16 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
 						t.uniformLocation = r.BindPoint;
 						// TODO: check consistency with the uniform type
 						//m_type = ... ?
+						switch (r.Type)
+						{
+						case D3D1X_SIT_TEXTURE:
+							{
+								// TODO avoroshilov: add dimension check (e.g. r.Dimension == D3D_SRV_DIMENSION_TEXTURE2D)
+								m_type = Uniform::TTexture;
+								shaderNum = scnt;
+								break;
+							}
+						};
 						t.valid = true;
 					}
 				}
@@ -229,7 +241,15 @@ void UniformD3D::updateD3D(ShadowedData *pData, STarget &t)
                     case THLSL_VTX: pd3d1X->VSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView); break;
                     case THLSL_PIX: pd3d1X->PSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView); break;
                     case THLSL_GS:  pd3d1X->GSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView); break;
-                    //case THLSL_HS: pd3d1X->xxSetShaderResources(t.index, 1, &pShaderResourceView); break;
+					case TANY:
+						//if (shaderNum == 0)
+						//	pd3d1X->VSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView);
+						//else if (shaderNum == 1)
+							//pd3d1X->GSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView);
+						//else if (shaderNum == 2)
+							pd3d1X->PSSetShaderResources(t.uniformLocation, 1, &pShaderResourceView);
+						break;
+						//case THLSL_HS: pd3d1X->xxSetShaderResources(t.index, 1, &pShaderResourceView); break;
                     //case THLSL_DS: pd3d1X->xxSetShaderResources(t.index, 1, &pShaderResourceView); break;
                     }
                     break;
@@ -280,7 +300,8 @@ Uniform*    UniformD3D::update2(ShadowedData* pData, Pass *pass, bool bCreateIfN
  *************************************************************************/ 
 Uniform*    UniformD3D::update(ShadowedData* pData, Pass *pass, int layerID, bool bCreateIfNeeded)
 {
-    static bool msgOnceCstBuffer = true;
+	// TODO avoroshilov: deal with it
+    static bool msgOnceCstBuffer = false;
     if(layerID < 0)
         return update2(pData, pass, bCreateIfNeeded);
     for(int i=0; i<(int)m_targets.size(); i++)
@@ -295,7 +316,8 @@ Uniform*    UniformD3D::update(ShadowedData* pData, Pass *pass, int layerID, boo
         case THLSL_GS:
         case THLSL_HS:
         case THLSL_DS:
-            if(pass)
+		case TANY:
+			if(pass)
             { // In this case we only update matching pass and return
                 if((t.pass == pass)&&(t.passLayerId == layerID))
                 {
@@ -325,6 +347,9 @@ Uniform*    UniformD3D::update(ShadowedData* pData, Pass *pass, int layerID, boo
             }
             t.pBuffer->updateFromUniforms(true);
             break;
+		default:
+			DebugBreak();
+			break;
         }
     }
     //
@@ -395,6 +420,7 @@ Uniform*    UniformD3D::updateForTarget(ShadowedData* pData, int target)
     case THLSL_GS:
     case THLSL_HS:
     case THLSL_DS:
+	case TANY:
         updateD3D(pData, t);
         break;
     case TDXCOMPUTE:

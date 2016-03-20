@@ -127,6 +127,9 @@ SamplerState*  SamplerStateD3D::update(void *data, Pass *pass, int layerID, bool
             {
             case THLSL_VTX: pd3d1X->VSSetSamplers(t.index, 1, &samplerState); break;
             case THLSL_PIX: pd3d1X->PSSetSamplers(t.index, 1, &samplerState); break;
+            case TANY:
+				pd3d1X->PSSetSamplers(t.index, 1, &samplerState);
+				break;
             //case THLSL_GS: pd3d1X->GSSetSamplers(t.index, 1, &samplerState); break;
             //case THLSL_HS: pd3d1X->HSSetSamplers(t.index, 1, &samplerState); break;
             //case THLSL_DS: pd3d1X->DSSetSamplers(t.index, 1, &samplerState); break;
@@ -189,6 +192,9 @@ SamplerState*  SamplerStateD3D::update(void *data, Pass *pass, int layerID, bool
 								{
 								case THLSL_VTX: pd3d1X->VSSetSamplers(t.index, 1, &samplerState); break;
 								case THLSL_PIX: pd3d1X->PSSetSamplers(t.index, 1, &samplerState); break;
+								case TANY:
+									pd3d1X->PSSetSamplers(t.index, 1, &samplerState);
+									break;
 								//case THLSL_GS: pd3d1X->GSSetSamplers(t.index, 1, &samplerState); break;
 								//case THLSL_HS: pd3d1X->HSSetSamplers(t.index, 1, &samplerState); break;
 								//case THLSL_DS: pd3d1X->DSSetSamplers(t.index, 1, &samplerState); break;
@@ -263,6 +269,9 @@ SamplerState*  SamplerStateD3D::updateForTarget(void *data, int target)
     {
     case THLSL_VTX: pd3d1X->VSSetSamplers(t.index, 1, &samplerState); break;
     case THLSL_PIX: pd3d1X->PSSetSamplers(t.index, 1, &samplerState); break;
+    case TANY:
+		pd3d1X->PSSetSamplers(t.index, 1, &samplerState);
+		break;
     //case THLSL_GS: pd3d1X->GSSetSamplers(t.index, 1, &samplerState); break;
     //case THLSL_HS: pd3d1X->HSSetSamplers(t.index, 1, &samplerState); break;
     //case THLSL_DS: pd3d1X->DSSetSamplers(t.index, 1, &samplerState); break;
